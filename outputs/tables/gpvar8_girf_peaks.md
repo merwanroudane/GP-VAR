@@ -1,0 +1,28 @@
+| shock | variable | impact | peak | peak_horizon | peak_q16 | peak_q84 | cumulative |
+|---|---|---|---|---|---|---|---|
+| positive 1 sd | UNC | 1.000 | 1.000 | 0 | 1.000 | 1.000 | 5.394 |
+| positive 1 sd | RGDP | -0.195 | -0.543 | 6 | -0.631 | -0.450 | -4.740 |
+| positive 1 sd | EMP | -0.087 | -0.451 | 6 | -0.547 | -0.368 | -4.323 |
+| positive 1 sd | AWH | -0.156 | -0.281 | 6 | -0.358 | -0.218 | -2.488 |
+| positive 1 sd | CPI | 0.049 | 0.065 | 2 | -0.000 | 0.120 | -0.150 |
+| positive 1 sd | AHE | 0.021 | -0.046 | 13 | -0.093 | 0.018 | -0.249 |
+| positive 1 sd | FFR | -0.024 | -0.242 | 9 | -0.295 | -0.204 | -2.903 |
+| positive 1 sd | SP500 | -0.071 | -0.216 | 4 | -0.309 | -0.152 | -1.373 |
+| negative 1 sd | UNC | -1.000 | -1.000 | 0 | -1.000 | -1.000 | -3.726 |
+| negative 1 sd | RGDP | 0.195 | 0.341 | 5 | 0.291 | 0.387 | 3.078 |
+| negative 1 sd | EMP | 0.087 | 0.261 | 3 | 0.208 | 0.311 | 2.551 |
+| negative 1 sd | AWH | 0.156 | 0.201 | 1 | 0.159 | 0.251 | 1.724 |
+| negative 1 sd | CPI | -0.049 | -0.062 | 1 | -0.115 | -0.005 | -0.286 |
+| negative 1 sd | AHE | -0.021 | -0.028 | 1 | -0.078 | 0.015 | 0.148 |
+| negative 1 sd | FFR | 0.024 | 0.148 | 9 | 0.120 | 0.183 | 1.886 |
+| negative 1 sd | SP500 | 0.071 | 0.143 | 4 | 0.094 | 0.195 | 0.871 |
+| positive 2 sd | UNC | 2.000 | 2.000 | 0 | 2.000 | 2.000 | 7.534 |
+| positive 2 sd | RGDP | -0.390 | -0.847 | 5 | -0.968 | -0.714 | -6.345 |
+| positive 2 sd | EMP | -0.174 | -0.709 | 5 | -0.827 | -0.593 | -6.129 |
+| positive 2 sd | AWH | -0.311 | -0.440 | 5 | -0.557 | -0.337 | -3.474 |
+| positive 2 sd | CPI | 0.098 | 0.112 | 1 | 0.007 | 0.214 | -0.531 |
+| positive 2 sd | AHE | 0.041 | -0.064 | 12 | -0.129 | 0.032 | -0.308 |
+| positive 2 sd | FFR | -0.048 | -0.357 | 8 | -0.413 | -0.298 | -4.287 |
+| positive 2 sd | SP500 | -0.143 | -0.313 | 3 | -0.466 | -0.184 | -1.818 |
+
+*Notes:* Peak = largest absolute posterior-median response; 68\% credible interval at the peak horizon; cumulative = sum of median responses over 0-16 quarters.

@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below, together with the original paper."
+title: "gpvar: Gaussian Process Vector Autoregressions with stochastic volatility in Python"
+version: 1.0.0
+date-released: 2026-09-17
+authors:
+  - family-names: Roudane
+    given-names: Merwan
+    email: merwanroudane920@gmail.com
+repository-code: "https://github.com/merwanroudane/GP-VAR"
+license: MIT
+keywords:
+  - Bayesian nonparametrics
+  - Gaussian process
+  - vector autoregression
+  - stochastic volatility
+  - uncertainty shocks
+references:
+  - type: article
+    title: "Gaussian Process Vector Autoregressions and Macroeconomic Uncertainty"
+    authors:
+      - family-names: Hauzenberger
+        given-names: Niko
+      - family-names: Huber
+        given-names: Florian
+      - family-names: Marcellino
+        given-names: Massimiliano
+      - family-names: Petz
+        given-names: Nico
+    year: 2022
+    url: "https://arxiv.org/abs/2112.01995"
+    doi: "10.48550/arXiv.2112.01995"

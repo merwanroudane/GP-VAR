@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gpvar"
+version = "1.0.0"
+description = "Gaussian Process Vector Autoregressions with stochastic volatility (Hauzenberger, Huber, Marcellino & Petz, 2022) in Python"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "Merwan Roudane", email = "merwanroudane920@gmail.com"}]
+requires-python = ">=3.9"
+keywords = ["Bayesian", "Gaussian process", "VAR", "stochastic volatility", "macroeconomics", "uncertainty", "impulse responses", "nonparametric"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+dependencies = [
+    "numpy>=1.23",
+    "scipy>=1.9",
+    "pandas>=1.5",
+    "matplotlib>=3.6",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "openpyxl"]
+
+[project.urls]
+Homepage = "https://github.com/merwanroudane/GP-VAR"
+Repository = "https://github.com/merwanroudane/GP-VAR"
+Paper = "https://arxiv.org/abs/2112.01995"
+
+[tool.setuptools]
+packages = ["gpvar"]
+
+[tool.setuptools.package-data]
+gpvar = ["datasets/*.csv", "datasets/*.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::UserWarning"]

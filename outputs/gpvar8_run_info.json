@@ -1,0 +1,33 @@
+{
+  "args": {
+    "nburn": 2000,
+    "nsave": 2000,
+    "girf_draws": 100,
+    "girf_sims": 5,
+    "horizon": 16,
+    "start": "1970Q1",
+    "end": "2019Q4",
+    "p": 5,
+    "order": "UNC,RGDP,EMP,AWH,CPI,AHE,FFR,SP500",
+    "quick": false,
+    "tag": "gpvar8",
+    "reuse_fit": true
+  },
+  "timings": {
+    "fit_seconds": 1942.9744427204132,
+    "girf_seconds": 242.1477062702179,
+    "total_seconds": 2347.0729188919067
+  },
+  "accept_rate": {
+    "UNC": 0.725,
+    "RGDP": 0.841,
+    "EMP": 0.885,
+    "AWH": 0.798,
+    "CPI": 0.444,
+    "AHE": 0.81,
+    "FFR": 0.091,
+    "SP500": 0.587
+  },
+  "T": 195,
+  "M": 8
+}
