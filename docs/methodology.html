@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Methodology · gpvar</title>
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Source+Sans+3:wght@400;600&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
+<script>
+MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap">
+    <div class="brand"><a href="index.html">gpvar</a><span class="tagline">Gaussian Process Vector Autoregressions with Stochastic Volatility in Python</span></div>
+    <nav><a href="index.html">Overview</a><a href="concepts.html">Concepts</a><a href="results.html">Results</a><a href="guide.html">User guide</a><a href="methodology.html" class=active>Methodology</a><a href="https://github.com/merwanroudane/GP-VAR">GitHub</a><a href="https://pypi.org/project/gpvar/">PyPI</a></nav>
+  </div>
+</header>
+<main class="wrap">
+<h1 class="pagetitle">Methodology</h1>
+<p class="subtitle">What gpvar implements and how each step maps to the paper</p>
+<p>This document lists, equation by equation, how the Python code corresponds to
+Hauzenberger, Huber, Marcellino and Petz (2022), <em>Gaussian Process Vector
+Autoregressions and Macroeconomic Uncertainty</em> (arXiv:2112.01995v3), and where
+the implementation makes choices that the paper leaves open.</p>
+<h2 id="1-model-paper-section-31">1. Model (paper Section 3.1)</h2>
+<p>Structural form, eq. (2):</p>
+<div class="arithmatex">\[y_t = F(x_t) + G(z_t) + Q y_t + \varepsilon_t, \qquad \varepsilon_t \sim N(0, H_t),\; H_t = \mathrm{diag}(\omega_{1t},\dots,\omega_{Mt}),\]</div>
+<p>with <span class="arithmatex">\(x_{jt}\)</span> the <span class="arithmatex">\(p\)</span> own lags of <span class="arithmatex">\(y_{jt}\)</span>, <span class="arithmatex">\(z_{jt}\)</span> the <span class="arithmatex">\((M-1)p\)</span> lags of the other variables and <span class="arithmatex">\(Q\)</span> lower triangular with zero diagonal.
+Equation <span class="arithmatex">\(j\)</span> in full-data form:</p>
+<div class="arithmatex">\[Y_j = f_j + g_j + \sum_{k&lt;j} q_{jk} Y_k + \epsilon_j, \qquad \epsilon_j \sim N(0, \Omega_j).\]</div>
+<p>Code: <code>gpvar.kernels.lag_matrix</code> builds <span class="arithmatex">\(y\)</span> and <span class="arithmatex">\(X = [y_{t-1}', \dots, y_{t-p}']\)</span>;
+<code>own_other_index</code> selects <span class="arithmatex">\(x_{jt}\)</span> (columns <span class="arithmatex">\(j, j+M, \dots\)</span>) and <span class="arithmatex">\(z_{jt}\)</span>.
+<code>GPVAR.fit</code> loops over equations; the contemporaneous term uses the observed
+<span class="arithmatex">\(Y_k\)</span>, <span class="arithmatex">\(k&lt;j\)</span>, exactly as in eq. (2).</p>
+<p>Log-volatilities, eq. (3): <span class="arithmatex">\(h_{jt} = \rho_{hj} h_{jt-1} + \nu_{jt}\)</span>, <span class="arithmatex">\(h_{j0} \sim N(0, \sigma^2_{hj}/(1-\rho^2_{hj}))\)</span>.
+The code adds an (optional, default on) unconditional mean <span class="arithmatex">\(\mu_{hj}\)</span>,
+<span class="arithmatex">\(h_{jt} - \mu = \rho(h_{jt-1} - \mu) + \nu_{jt}\)</span>, with prior <span class="arithmatex">\(N(0, 10)\)</span>.  Set
+<code>SVPriors(estimate_mu=False)</code> to obtain eq. (3) literally.  (The authors' own R
+code estimates the level through the <code>stochvol</code> package as well.)</p>
+<h2 id="2-priors-section-32">2. Priors (Section 3.2)</h2>
+<ul>
+<li><span class="arithmatex">\(f_j \sim N(0, \sqrt{\Omega_j} K_{\vartheta_{j1}}(X_j,X_j)\sqrt{\Omega_j})\)</span> and likewise for <span class="arithmatex">\(g_j\)</span> (eq. 4): <code>KernelBlock.posterior_draw</code> uses exactly this SV-scaled kernel.</li>
+<li>Gaussian kernel with scaling matrix <span class="arithmatex">\(D\)</span> of empirical column variances: <code>kernels.scaled_sq_dists</code>, <code>gaussian_kernel</code>.</li>
+<li>Horseshoe on the free elements of <span class="arithmatex">\(Q\)</span>: <code>priors.HorseshoeState.update</code> (Makalic and Schmidt, 2015; one global <span class="arithmatex">\(\tau\)</span> for all elements, as in the authors' R code).</li>
+<li><span class="arithmatex">\((\rho+1)/2 \sim B(25,5)\)</span>, <span class="arithmatex">\(\sigma^2_h \sim IG\)</span> with mean 0.1 and variance 0.01 (i.e. <span class="arithmatex">\(IG(3, 0.2)\)</span>): <code>priors.SVPriors</code>.</li>
+</ul>
+<h2 id="3-hyperparameters-section-33">3. Hyperparameters (Section 3.3)</h2>
+<ul>
+<li>Median heuristic <span class="arithmatex">\(\bar\kappa = \mathrm{median}_{t\ne\tau}(1/\|x_{jt}-x_{j\tau}\|)\)</span> on <span class="arithmatex">\(D^{-1/2}\)</span>-scaled inputs: <code>kernels.median_heuristic</code>.</li>
+<li>Grid <span class="arithmatex">\(\kappa \in [0.1\bar\kappa, 2\bar\kappa]\)</span>, <span class="arithmatex">\(\xi \in [0.04, 4]\)</span> with Gamma<span class="arithmatex">\((1/2, 1/(2c))\)</span> hyperpriors: <code>kernels.make_hyper_grid</code>.
+  Defaults <code>n_kappa=20</code>, <code>n_xi=50</code> (1000 combinations, "around 1000" in the paper).  The three specifications of
+  Table 2 are <code>hyper_scheme="semi-automatic"</code>, <code>"semi-automatic-noscale"</code> and <code>"naive"</code>.</li>
+<li>Prior means <span class="arithmatex">\(c_\kappa\)</span> and <span class="arithmatex">\(c_\xi\)</span> are set by cross-validation in the paper; the code exposes them
+  (<code>c_kappa=0.1</code>, <code>c_xi=1.0</code> by default, "small <span class="arithmatex">\(c_\kappa\)</span>" as recommended).</li>
+</ul>
+<p>Because <span class="arithmatex">\(K_{\xi,\kappa} = \xi K_\kappa\)</span>, the code stores one eigendecomposition per <span class="arithmatex">\(\kappa\)</span> (not per grid point) and
+obtains all posterior quantities for any <span class="arithmatex">\(\xi\)</span> in <span class="arithmatex">\(O(T^2)\)</span> — the "pre-compute inverses and Cholesky factors" idea of Section 3.4 in a
+form that also avoids the <span class="arithmatex">\(O(T^3)\)</span> Cholesky per draw:</p>
+<div class="arithmatex">\[\bar V_{f_j} = \sqrt{\Omega_j}\,U\,\mathrm{diag}\!\Big(\tfrac{\xi\lambda}{1+\xi\lambda}\Big)U'\sqrt{\Omega_j}, \qquad
+\bar f_j = \sqrt{\Omega_j}\,U\,\mathrm{diag}\!\Big(\tfrac{\xi\lambda}{1+\xi\lambda}\Big)U'\,\Omega_j^{-1/2}\Big(Y_j - g_j - \textstyle\sum_{k&lt;j} q_{jk}Y_k\Big).\]</div>
+<h2 id="4-posterior-simulation-section-34-appendix-a4">4. Posterior simulation (Section 3.4, Appendix A.4)</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Paper step</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. <span class="arithmatex">\(q_{j\cdot}\)</span> from its Gaussian conditional (heteroskedastic regression with horseshoe prior)</td>
+<td><code>GPVAR.fit</code>, "Step 1"</td>
+</tr>
+<tr>
+<td>2. <span class="arithmatex">\(h_j\)</span> marginally of <span class="arithmatex">\(f_j, g_j\)</span> via independence MH (Appendix A.3)</td>
+<td><code>sv.sample_logvol_imh</code> (banded Hessian, as in the paper) / <code>sv.sample_logvol_imh_dense</code> (exact Hessian, default)</td>
+</tr>
+<tr>
+<td>3. <span class="arithmatex">\(f_j\)</span> from its conjugate Gaussian conditional</td>
+<td><code>KernelBlock.posterior_draw</code></td>
+</tr>
+<tr>
+<td>4. <span class="arithmatex">\(g_j\)</span> with the restriction <span class="arithmatex">\(\iota' g_j = 0\)</span> (Cong, Chen and Zhou, 2017, Alg. 2; Appendix A.2)</td>
+<td><code>GPVAR.fit</code>, "Steps 4 &amp; 6"</td>
+</tr>
+<tr>
+<td>5./6. <span class="arithmatex">\(\vartheta_{j1}, \vartheta_{j2}\)</span> by multinomial sampling on the grid</td>
+<td><code>KernelBlock.log_marginal_grid</code> / <code>log_conditional_grid</code> + <code>_sample_grid</code></td>
+</tr>
+<tr>
+<td>7. SV state-equation parameters</td>
+<td><code>sv.sample_sv_params</code></td>
+</tr>
+<tr>
+<td>8. Horseshoe hyperparameters (inverse-Gamma Gibbs)</td>
+<td><code>HorseshoeState.update</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Two implementation choices:</p>
+<ul>
+<li><strong><code>hyper_sampling="conditional"</code></strong> samples <span class="arithmatex">\(\vartheta\)</span> from <span class="arithmatex">\(p(\vartheta_{j1} \mid f_j, \Omega_j) \propto N(f_j; 0, \sqrt{\Omega_j}\xi K_\kappa\sqrt{\Omega_j})\,p(\vartheta)\)</span> — the paper's Step 5 literally.  This requires <span class="arithmatex">\(K_\kappa^{-1}\)</span>, which is numerically fragile for smooth kernels (tiny eigenvalues); a jitter of <span class="arithmatex">\(10^{-8}\)</span> is added.</li>
+<li><strong><code>hyper_sampling="marginal"</code> (default)</strong> draws the block <span class="arithmatex">\((\vartheta_{j1}, f_j)\)</span> jointly: <span class="arithmatex">\(\vartheta_{j1}\)</span> from <span class="arithmatex">\(p(\vartheta_{j1}\mid Y_j - g_j - \sum q Y_k, \Omega_j)\)</span> with <span class="arithmatex">\(f_j\)</span> integrated out, i.e. <span class="arithmatex">\(N(\Omega_j^{-1/2} r;\, 0, \xi K_\kappa + I_T)\)</span>, followed by <span class="arithmatex">\(f_j \mid \vartheta_{j1}\)</span>.  This is a partially collapsed Gibbs step (Van Dyk and Park, 2008) that leaves the same posterior invariant, mixes better and only involves <span class="arithmatex">\(\xi K_\kappa + I\)</span> (always well conditioned).</li>
+</ul>
+<p>The IMH step for <span class="arithmatex">\(h_j\)</span> follows Appendix A.3: Newton–Raphson to the mode of <span class="arithmatex">\(\log p(h_j\mid \tilde Y_j, S_j, \theta_{hj})\)</span>
+using the gradient <span class="arithmatex">\(-\tfrac12\iota + \tfrac12 (S_j^{-1}\hat Y_j)\odot \hat Y_j\)</span> and negative Hessian
+<span class="arithmatex">\(\tfrac14\mathrm{diag}(\hat Y_j)S_j^{-1}\mathrm{diag}(\hat Y_j) + \tfrac14\mathrm{diag}((S_j^{-1}\hat Y_j)\odot\hat Y_j)\)</span>
+(plus the AR(1) prior precision <span class="arithmatex">\(D'D/\sigma^2_h\)</span>), then a Gaussian proposal <span class="arithmatex">\(N(\hat h_j, \hat R(\hat h_j)^{-1})\)</span> and the
+independence-MH acceptance ratio.  Two practical additions: (i) the first <code>sv_init_sweeps</code> burn-in sweeps accept the
+proposal unconditionally so that the chain starts at the conditional mode (an independence sampler started far from
+the mode can reject for thousands of iterations), and (ii) <code>sv_tries</code> accept/reject attempts are made per sweep from
+the same proposal (the proposal is state-independent, so the expensive mode search is shared).</p>
+<h2 id="5-forecasts-and-girfs-section-35-appendix-a5">5. Forecasts and GIRFs (Section 3.5, Appendix A.5)</h2>
+<p><code>predict.DrawContext</code> implements the predictive mean
+<span class="arithmatex">\(\bar m_{j,t+1} = \sigma_{j,t+1} K^*_{\vartheta_j}(W_{j,t+1}, W_j)(K^*_{\vartheta_j}(W_j,W_j)+I_T)^{-1}\Omega_j^{-1/2}(Y_j - \sum_{k&lt;j}q_{jk}Y_k)\)</span>
+with <span class="arithmatex">\(K^* = \xi_1 K_1 + \xi_2 K_2\)</span> (the sum-of-kernels representation of <span class="arithmatex">\(m_j\)</span>, Section 3.2), the predictive variance
+<span class="arithmatex">\(\sigma^2_{j,t+1}[\xi_1+\xi_2 - K^*(\cdot)(K^*+I)^{-1}K^*(\cdot)']\)</span> (optional, <code>sample_m=True</code>) and
+<span class="arithmatex">\(y_{t+1} = (I-Q)^{-1}(m_{t+1} + \varepsilon_{t+1})\)</span> with <span class="arithmatex">\(\varepsilon_{j,t+1}\sim N(0,\omega_{j,t+1})\)</span>, <span class="arithmatex">\(\omega\)</span> simulated from the SV law of motion.</p>
+<p><code>girf.girf</code> computes <span class="arithmatex">\(\delta_{h,t} = E[y_{t+h}\mid I_t, \varepsilon_{jt}=\varsigma] - E[y_{t+h}\mid I_t]\)</span> for every history <span class="arithmatex">\(t\)</span> (or a subset),
+with the shock entering as <span class="arithmatex">\(\varsigma q_j\)</span> (<span class="arithmatex">\(q_j\)</span> = <span class="arithmatex">\(j\)</span>-th column of <span class="arithmatex">\((I-Q)^{-1}\)</span>) and common future shocks in both branches.
+<code>shock_scale="unit"</code> normalises the impact response of the shocked variable to <code>size</code> (the Figure 7 normalisation);
+<code>shock_scale="sd"</code> uses <code>size</code> <span class="arithmatex">\(\times \exp(h_{jt}/2)\)</span>.  Averages over <span class="arithmatex">\(t\)</span> (Figures 7–10), sub-samples (Figure 11),
+yearly medians (Figure 12) and NBER recession/expansion splits (Figure C.6) are methods of <code>GIRFResult</code>.</p>
+<h2 id="6-forecast-evaluation-section-52">6. Forecast evaluation (Section 5.2)</h2>
+<p><code>forecast.recursive_forecast_evaluation</code> re-estimates a model at each origin of an expanding window and scores the
+realisations with log predictive likelihoods (Gaussian approximation to the simulated predictive, or a KDE for
+marginals) and CRPS; <code>forecast.lpbf_table</code> forms log predictive Bayes factors relative to a benchmark.  The
+benchmark shipped with the package is a natural-conjugate Minnesota BVAR (<code>benchmarks.BVAR</code>, homoskedastic); the
+paper's benchmark additionally has SV.</p>
+<h2 id="7-synthetic-data-section-4">7. Synthetic data (Section 4)</h2>
+<p><code>simulate.simulate_paper_dgp</code> reproduces the DGP of Section 4 (linear equation with <span class="arithmatex">\(t_3\)</span> errors, structural break at
+<span class="arithmatex">\(t = 100\)</span>, sine/quadratic equation, random-walk SV, horseshoe-like <span class="arithmatex">\(Q\)</span>).  <code>simulate.simulate_replication_dgp</code>
+reproduces <code>simulate_data.R</code> of the authors' replication archive.</p>
+<h2 id="references">References</h2>
+<ul>
+<li>Chan, J. C. C. (2017). The stochastic volatility in mean model with time-varying parameters. <em>JBES</em> 35, 17–28.</li>
+<li>Cong, Y., Chen, B. and Zhou, M. (2017). Fast simulation of hyperplane-truncated multivariate normal distributions. <em>Bayesian Analysis</em> 12, 1017–1037.</li>
+<li>Hauzenberger, N., Huber, F., Marcellino, M. and Petz, N. (2022). Gaussian process vector autoregressions and macroeconomic uncertainty. arXiv:2112.01995.</li>
+<li>Koop, G., Pesaran, M. H. and Potter, S. M. (1996). Impulse response analysis in nonlinear multivariate models. <em>Journal of Econometrics</em> 74, 119–147.</li>
+<li>Makalic, E. and Schmidt, D. F. (2015). A simple sampler for the horseshoe estimator. <em>IEEE Signal Processing Letters</em> 23, 179–182.</li>
+<li>Van Dyk, D. A. and Park, T. (2008). Partially collapsed Gibbs samplers. <em>JASA</em> 103, 790–796.</li>
+</ul>
+</main>
+<footer class="wrap">
+  <p>gpvar · Dr Merwan Roudane · <a href="mailto:merwanroudane920@gmail.com">merwanroudane920@gmail.com</a> · <a href="https://github.com/merwanroudane/GP-VAR">github.com/merwanroudane/GP-VAR</a> · MIT License.<br>
+  Implements Hauzenberger, Huber, Marcellino and Petz (2022), <em>Gaussian Process Vector Autoregressions and Macroeconomic Uncertainty</em>, <a href="https://arxiv.org/abs/2112.01995">arXiv:2112.01995</a>. Data: FRED-QD (Federal Reserve Bank of St. Louis) and Jurado, Ludvigson and Ng (2015).</p>
+</footer>
+</body>
+</html>

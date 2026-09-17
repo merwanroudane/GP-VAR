@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overview · gpvar</title>
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Source+Sans+3:wght@400;600&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
+<script>
+MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap">
+    <div class="brand"><a href="index.html">gpvar</a><span class="tagline">Gaussian Process Vector Autoregressions with Stochastic Volatility in Python</span></div>
+    <nav><a href="index.html" class=active>Overview</a><a href="concepts.html">Concepts</a><a href="results.html">Results</a><a href="guide.html">User guide</a><a href="methodology.html">Methodology</a><a href="https://github.com/merwanroudane/GP-VAR">GitHub</a><a href="https://pypi.org/project/gpvar/">PyPI</a></nav>
+  </div>
+</header>
+<main class="wrap">
+<h1 class="pagetitle">Overview</h1>
+<p class="subtitle">A faithful, self-contained Python implementation of the GP-VAR with stochastic volatility of Hauzenberger, Huber, Marcellino and Petz (2022)</p>
+<p><code>gpvar</code> is a complete, self-contained Python implementation of the <strong>Gaussian process vector autoregression (GP-VAR)</strong> of</p>
+<blockquote>
+<p>Hauzenberger, N., Huber, F., Marcellino, M. and Petz, N. (2022). <em>Gaussian Process Vector Autoregressions and Macroeconomic Uncertainty</em>. arXiv:2112.01995 (Journal of Business &amp; Economic Statistics, forthcoming).</p>
+</blockquote>
+<p>It follows the paper's methodology step by step (SV-scaled conjugate GP priors on own- and other-lag functionals, discrete hyperparameter grid with the median heuristic, independence-MH log-volatility sampler, horseshoe-shrunk contemporaneous matrix, generalized impulse responses with sign / size / time asymmetries, recursive density-forecast evaluation) and reproduces every type of figure and table of the paper on <strong>real US data</strong> (FRED-QD and the Jurado–Ludvigson–Ng macroeconomic uncertainty index), producing journal-quality output.</p>
+<p>The authors' R replication archive (<code>GPVAR_replication/</code>, Florian Huber, <a href="https://github.com/fhuber7/replication-archive/tree/main/GPVAR_replication">fhuber7/replication-archive</a>) is included for reference; the Python library goes well beyond it (it implements the full algorithm of the paper rather than the simplified kernel version, plus forecasting, evaluation, asymmetry analysis, data pipeline, figures and tables).</p>
+<p><strong>Author:</strong> Dr Merwan Roudane · merwanroudane920@gmail.com · <a href="https://github.com/merwanroudane">github.com/merwanroudane</a></p>
+<p><strong>Documentation site (all concepts, figures and tables):</strong> https://merwanroudane.github.io/GP-VAR/ · <strong>PyPI:</strong> <code>pip install gpvar</code></p>
+<hr /><div class="grid3"><a class="card" href="concepts.html"><h3>Concepts</h3><p>The model, the SV-scaled Gaussian-process priors, the hyperparameter grid, the sampler and generalized impulse responses, explained with the notation of the paper.</p></a><a class="card" href="results.html"><h3>Results on real data</h3><p>The complete GP-VAR-8 application on US data 1970Q1-2019Q4: every figure and table (shrinkage, kernels, GIRFs, asymmetries, sub-samples, forecasts, evaluation).</p></a><a class="card" href="guide.html"><h3>User guide</h3><p>How to write code with gpvar: data, model specification, estimation, GIRFs, forecasts, figures, tables, with runnable snippets and the full signature reference.</p></a></div><h2 id="1-the-model-in-one-page">1. The model in one page</h2>
+<p>For an <span class="arithmatex">\(M\)</span>-vector of (demeaned, standardised) macroeconomic series <span class="arithmatex">\(y_t\)</span> with <span class="arithmatex">\(p\)</span> lags, the <strong>structural</strong> GP-VAR is</p>
+<div class="arithmatex">\[
+y_t = F(x_t) + G(z_t) + Q\,y_t + \varepsilon_t,\qquad \varepsilon_t \sim N(0, H_t),\quad H_t=\mathrm{diag}(\omega_{1t},\dots,\omega_{Mt}),
+\]</div>
+<p>where <span class="arithmatex">\(x_{jt}=(y_{jt-1},\dots,y_{jt-p})'\)</span> are the <strong>own lags</strong> of variable <span class="arithmatex">\(j\)</span>, <span class="arithmatex">\(z_{jt}\)</span> the lags of <strong>all other</strong> variables, and <span class="arithmatex">\(Q\)</span> is lower triangular with zero diagonal (recursive identification). Each equation has two unknown functions with Gaussian-process priors whose kernels are scaled by the equation's stochastic volatility,</p>
+<div class="arithmatex">\[
+f_j \sim N\!\big(0,\sqrt{\Omega_j}\,K_{\vartheta_{j1}}(X_j,X_j)\sqrt{\Omega_j}\big),\qquad
+g_j \sim N\!\big(0,\sqrt{\Omega_j}\,K_{\vartheta_{j2}}(Z_j,Z_j)\sqrt{\Omega_j}\big),\qquad
+k_{\vartheta}(x_t,x_\tau)=\xi\exp\!\Big(-\tfrac{\kappa}{2}(x_t-x_\tau)'D^{-1}(x_t-x_\tau)\Big),
+\]</div>
+<p>and log-volatilities <span class="arithmatex">\(h_{jt}=\log\omega_{jt}\)</span> following a stationary AR(1). The scaling by <span class="arithmatex">\(\sqrt{\Omega_j}\)</span> makes the model conjugate: all kernel inverses can be pre-computed on a discrete <span class="arithmatex">\((\kappa,\xi)\)</span> grid centred on the <strong>median heuristic</strong>, and the sampler's cost per equation does not depend on the number of regressors. Non-linearity of the conditional mean means impulse responses are <strong>generalized</strong> IRFs (Koop, Pesaran and Potter, 1996) that depend on the history, the sign and the size of the shock — the paper's main empirical message about uncertainty shocks.</p>
+<p>Full derivations and the mapping of every sampler step to the code are in <a href="docs/METHODOLOGY.md"><code>docs/METHODOLOGY.md</code></a>.</p>
+<hr /><h2 id="2-installation">2. Installation</h2>
+<pre><code class="language-bash">git clone https://github.com/merwanroudane/GP-VAR.git
+cd GP-VAR
+pip install -e .
+</code></pre>
+<p>Dependencies: <code>numpy</code>, <code>scipy</code>, <code>pandas</code>, <code>matplotlib</code> (Python ≥ 3.9). No compiled code, no R. Run the tests with</p>
+<pre><code class="language-bash">pip install -e .[dev]
+pytest
+</code></pre>
+<hr /><h2 id="3-quick-start">3. Quick start</h2>
+<pre><code class="language-python">import gpvar
+
+# 1. Data: the paper's GP-VAR-8 (quarterly, 1970Q1-2019Q4), built from the bundled FRED-QD / JLN files
+Y, info = gpvar.data.build_dataset(size=8, start=&quot;1970Q1&quot;, end=&quot;2019Q4&quot;)
+
+# 2. Estimate (5 lags, SV, semi-automatic (kappa, xi) grid with 20 x 50 points)
+model = gpvar.GPVAR(Y, p=5, sv=True, hyper_scheme=&quot;semi-automatic&quot;, n_kappa=20, n_xi=50)
+res = model.fit(nburn=2000, nsave=2000, seed=1)
+
+# 3. In-sample objects
+res.hyper_summary()          # posterior of xi / kappa per equation (own vs. other lags)
+res.shrinkage_paths()        # omega_jt * xi (Figure 5 of the paper)
+res.volatility()             # exp(h_t/2) quantiles
+res.Q_summary()              # contemporaneous coefficients
+
+# 4. Generalized impulse responses to a one-sd uncertainty shock, averaged over all histories
+g_pos = gpvar.girf(res, &quot;UNC&quot;, size=1, sign=+1, horizon=16, n_sim=5, n_draws=100)   # ~1 s per draw, multithreaded
+g_neg = gpvar.girf(res, &quot;UNC&quot;, size=1, sign=-1, horizon=16, n_sim=5, n_draws=100)
+g_pos.summary()                                   # variable, horizon, q16 / q50 / q84
+g_pos.by_periods(gpvar.data.PAPER_SUBSAMPLES)     # great inflation / great moderation / post-2007
+g_pos.yearly_medians()                            # time variation within sub-samples
+g_pos.peak_table()
+
+# 5. Figures (PDF + PNG)
+from gpvar import plots
+plots.set_journal_style()
+plots.plot_girf({&quot;positive&quot;: g_pos.summary(), &quot;negative&quot;: g_neg.summary()}, save=&quot;girf_sign&quot;)
+
+# 6. Forecasts and density-forecast evaluation
+fc = res.predict(horizon=8, n_sim=5)
+fc.quantiles()
+</code></pre>
+<p>Everything the examples produce lives in <code>outputs/figures</code> and <code>outputs/tables</code> (Markdown, LaTeX/booktabs and CSV versions of every table).</p>
+<hr /><h2>Headline results</h2><p>The library reproduces the paper's Section 6 analysis on real data. Average responses to a positive one-standard-deviation uncertainty shock (posterior median, 68 % bands) compared with a linear BVAR, and the sign asymmetry that is the paper's central finding:</p><figure><a href="figures/gpvar8_fig07_girf_vs_bvar_focus.png"><img src="figures/gpvar8_fig07_girf_vs_bvar_focus.png" alt="Average GIRFs of the focus variables, GP-VAR-8 (orange) vs. BVAR-8 (grey)."></a><figcaption>Average GIRFs of the focus variables, GP-VAR-8 (orange) vs. BVAR-8 (grey). <span class="dl">(<a href="https://raw.githubusercontent.com/merwanroudane/GP-VAR/main/outputs/figures/gpvar8_fig07_girf_vs_bvar_focus.pdf">PDF</a>)</span></figcaption></figure><figure><a href="figures/gpvar8_fig09_sign_asymmetry_focus.png"><img src="figures/gpvar8_fig09_sign_asymmetry_focus.png" alt="Responses to positive (orange) and negative (blue) shocks; the mirrored negative response (grey) would coincide with the orange line in a linear model."></a><figcaption>Responses to positive (orange) and negative (blue) shocks; the mirrored negative response (grey) would coincide with the orange line in a linear model. <span class="dl">(<a href="https://raw.githubusercontent.com/merwanroudane/GP-VAR/main/outputs/figures/gpvar8_fig09_sign_asymmetry_focus.pdf">PDF</a>)</span></figcaption></figure><h2 id="9-library-reference">9. Library reference</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gpvar.GPVAR(Y, p, sv, hyper_scheme, n_kappa, n_xi, c_kappa, c_xi, hyper_sampling, restrict_g_mean, sv_priors, sv_hessian, sv_tries)</code></td>
+<td>Model specification and pre-computation (kernel eigendecompositions per equation and grid point). <code>.fit(nburn, nsave, thin, seed)</code> runs the MCMC and returns <code>GPVARResults</code>.</td>
+</tr>
+<tr>
+<td><code>gpvar.GPVARResults</code></td>
+<td>Posterior draws (<code>f</code>, <code>g</code>, <code>h</code>, <code>Q</code>, <code>hyper</code>, <code>sv_params</code>), summaries (<code>hyper_summary</code>, <code>sv_summary</code>, <code>Q_summary</code>, <code>fitted</code>, <code>volatility</code>, <code>shrinkage_paths</code>, <code>fit_correlations</code>), <code>.predict()</code>, <code>.girf()</code>, <code>.save()/.load()</code>.</td>
+</tr>
+<tr>
+<td><code>gpvar.girf(results, shock_var, size, sign, horizon, histories, n_sim, n_draws, shock_scale, sample_m)</code></td>
+<td>Generalized impulse responses for every history; returns <code>GIRFResult</code> with <code>.summary()</code>, <code>.average()</code>, <code>.by_periods()</code>, <code>.yearly_medians()</code>, <code>.peak_table()</code>, <code>.state_dependence()</code>, <code>.mask_from_dates()</code>. <code>girf_sign_asymmetry</code>, <code>girf_size_asymmetry</code>, <code>ordering_robustness</code> are convenience wrappers.</td>
+</tr>
+<tr>
+<td><code>gpvar.predict(results, horizon, n_sim, n_draws, sample_m)</code></td>
+<td>Simulation from the multi-step predictive distribution; <code>ForecastResult.quantiles()</code>.</td>
+</tr>
+<tr>
+<td><code>gpvar.log_predictive_score</code>, <code>gpvar.crps</code>, <code>gpvar.recursive_forecast_evaluation</code>, <code>gpvar.lpbf_table</code></td>
+<td>Density-forecast evaluation.</td>
+</tr>
+<tr>
+<td><code>gpvar.BVAR</code></td>
+<td>Natural-conjugate Minnesota BVAR benchmark with <code>.predict()</code> and Cholesky <code>.irf()</code>.</td>
+</tr>
+<tr>
+<td><code>gpvar.GPRegression</code></td>
+<td>Univariate GP regression (Gaussian / linear / persistence kernels) for the Section 2 illustrations.</td>
+</tr>
+<tr>
+<td><code>gpvar.simulate_paper_dgp</code>, <code>gpvar.simulate_replication_dgp</code></td>
+<td>Synthetic DGPs of the paper and of the replication archive.</td>
+</tr>
+<tr>
+<td><code>gpvar.data</code></td>
+<td>Bundled FRED-QD subset and JLN index, paper transformations (<code>build_dataset</code>, <code>transform_series</code>), NBER recessions, sub-sample definitions.</td>
+</tr>
+<tr>
+<td><code>gpvar.plots</code></td>
+<td>Journal-style figures: <code>plot_girf</code>, <code>plot_girf_periods</code>, <code>plot_girf_time_variation</code>, <code>plot_shrinkage_paths</code>, <code>plot_kernel_boxplots</code>, <code>plot_volatility</code>, <code>plot_fit_components</code>, <code>plot_gp_illustration</code>, <code>plot_data</code>, <code>plot_forecast_fan</code>, <code>plot_lpl_cumulative</code>, <code>plot_trace</code>.</td>
+</tr>
+<tr>
+<td><code>gpvar.tables</code></td>
+<td>Markdown / LaTeX (booktabs) / CSV writers and ready-made tables (<code>hyper_table</code>, <code>sv_table</code>, <code>girf_horizon_table</code>, <code>girf_peak_table</code>, <code>asymmetry_table</code>, <code>size_asymmetry_table</code>).</td>
+</tr>
+<tr>
+<td><code>gpvar.kernels</code>, <code>gpvar.sv</code>, <code>gpvar.priors</code>, <code>gpvar.predict</code></td>
+<td>Building blocks (kernel blocks with eigendecompositions, IMH volatility sampler, horseshoe, predictive engine).</td>
+</tr>
+</tbody>
+</table></div>
+<p>Key options of <code>GPVAR</code>:</p>
+<ul>
+<li><code>hyper_scheme</code>: <code>"semi-automatic"</code> (grid on both <span class="arithmatex">\(\kappa\)</span> and <span class="arithmatex">\(\xi\)</span>, the paper's preferred specification), <code>"semi-automatic-noscale"</code> (<span class="arithmatex">\(\xi = 1\)</span>), <code>"naive"</code> (<span class="arithmatex">\(\kappa\in[0.1,2]\)</span>, <span class="arithmatex">\(\xi=1\)</span>).</li>
+<li><code>hyper_sampling</code>: <code>"marginal"</code> (default; samples <span class="arithmatex">\(\vartheta\)</span> with the latent function integrated out, then the function — a blocked step that mixes better) or <code>"conditional"</code> (the paper's Step 5/6 literally).</li>
+<li><code>sv</code>: stochastic volatility (<code>True</code>) or homoskedastic errors (<code>False</code>, the "GP-VAR homoskedastic" of Table 2).</li>
+<li><code>sv_hessian</code>: <code>"dense"</code> (exact Hessian for the IMH proposal, default) or <code>"band"</code> (the paper's tridiagonal approximation, cheaper for large <span class="arithmatex">\(T\)</span>); <code>sv_tries</code>: accept/reject attempts per sweep from the same proposal.</li>
+<li><code>restrict_g_mean</code>: grand-mean-zero restriction on <span class="arithmatex">\(g_j\)</span> (Appendix A.2).</li>
+<li><code>SVPriors(estimate_mu=False)</code> removes the unconditional mean of the log-volatility process (eq. 3 of the paper literally).</li>
+</ul>
+<hr /><h2 id="10-how-the-implementation-maps-to-the-paper">10. How the implementation maps to the paper</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Paper</th>
+<th>Implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Eq. (2) structural form with own/other lag functions</td>
+<td><code>GPVAR</code> (equation-by-equation), <code>kernels.own_other_index</code></td>
+</tr>
+<tr>
+<td>Eq. (3) SV process</td>
+<td><code>sv.sample_sv_params</code> (Beta(25,5) on <span class="arithmatex">\((\rho+1)/2\)</span>, IG(3, 0.2) on <span class="arithmatex">\(\sigma^2_h\)</span>)</td>
+</tr>
+<tr>
+<td>Eq. (4) SV-scaled GP priors, Gaussian kernel with scaling matrix <span class="arithmatex">\(D\)</span></td>
+<td><code>kernels.KernelBlock</code>, <code>posterior_draw</code></td>
+</tr>
+<tr>
+<td>Section 3.3 median heuristic, grid <span class="arithmatex">\(\kappa\in[0.1\bar\kappa,2\bar\kappa]\)</span>, <span class="arithmatex">\(\xi\in[0.04,4]\)</span>, Gamma hyperpriors</td>
+<td><code>kernels.median_heuristic</code>, <code>make_hyper_grid</code>, <code>log_gamma_prior</code></td>
+</tr>
+<tr>
+<td>Section 3.4 conjugate posterior of <span class="arithmatex">\(f_j\)</span>, pre-computed factors</td>
+<td>eigendecomposition per <span class="arithmatex">\(\kappa\)</span> (all quantities <span class="arithmatex">\(O(T^2)\)</span> per draw)</td>
+</tr>
+<tr>
+<td>Appendix A.2 sampling <span class="arithmatex">\(g_j\)</span> under <span class="arithmatex">\(\iota'g_j=0\)</span> (Cong, Chen, Zhou 2017)</td>
+<td><code>GPVAR.fit</code>, Steps 4 &amp; 6</td>
+</tr>
+<tr>
+<td>Appendix A.3 log-volatilities: Newton–Raphson mode, band Hessian, independence MH</td>
+<td><code>sv.sample_logvol_imh</code> (band) / <code>sv.sample_logvol_imh_dense</code></td>
+</tr>
+<tr>
+<td>Appendix A.4 Steps 1–8</td>
+<td><code>GPVAR.fit</code></td>
+</tr>
+<tr>
+<td>Section 3.5 / Appendix A.5 forecasts and GIRFs</td>
+<td><code>predict.DrawContext</code>, <code>forecast.predict</code>, <code>girf.girf</code></td>
+</tr>
+<tr>
+<td>Section 4 DGP, Table 1</td>
+<td><code>simulate.simulate_paper_dgp</code>, <code>GPVARResults.fit_correlations</code></td>
+</tr>
+<tr>
+<td>Section 5.2 LPBFs</td>
+<td><code>forecast.recursive_forecast_evaluation</code>, <code>lpbf_table</code></td>
+</tr>
+<tr>
+<td>Figures 1–2, A.1</td>
+<td><code>GPRegression</code>, <code>plots.plot_gp_illustration</code></td>
+</tr>
+<tr>
+<td>Figures 3, 5, 6, 7, 9, 10, 11, 12, C.4–C.10</td>
+<td><code>plots.*</code> (see Section 4 above)</td>
+</tr>
+</tbody>
+</table></div>
+<p>Two deliberate differences from the paper are documented in <code>docs/METHODOLOGY.md</code>: the optional mean of the log-volatility process (on by default, as in the authors' R code) and the blocked ("marginal") hyperparameter step (the paper's conditional step is available with <code>hyper_sampling="conditional"</code>). The BVAR benchmark shipped here is homoskedastic (the paper's has SV).</p>
+<hr /><h2 id="11-data">11. Data</h2>
+<p>Two files ship in <code>gpvar/datasets/</code> so that every example is reproducible offline:</p>
+<ul>
+<li><code>fredqd_subset.csv</code> — 26 series of <strong>FRED-QD</strong> (McCracken and Ng, 2020), vintage 2026-08, 1959Q1–2026Q2, with the FRED-QD transformation codes. Source: Federal Reserve Bank of St. Louis.</li>
+<li><code>jln_macro_uncertainty.csv</code> — the <strong>JLN macroeconomic uncertainty index</strong> (h = 1, 3, 12), monthly 1960:07–2026:06 (August 2026 update), from Sydney C. Ludvigson's website.</li>
+</ul>
+<p><code>gpvar.data.build_dataset(size=8 | 16, start, end)</code> assembles the paper's GP-VAR-8 or GP-VAR-16 with the Table B.1 transformations (<code>scheme="paper"</code>) or the FRED-QD codes (<code>scheme="fred"</code>); <code>gpvar.data.fetch_fred_qd()</code> downloads the latest full vintage. Samples extending through the pandemic (e.g. <code>end="2025Q4"</code>) work out of the box (<code>--end 2025Q4</code> in example 3 adds a 2020– sub-sample panel).</p>
+<hr /><h2 id="12-performance-and-settings">12. Performance and settings</h2>
+<p>Per MCMC sweep the cost is <span class="arithmatex">\(O(M\,T^2)\)</span> for the GP draws plus one <span class="arithmatex">\(T\times T\)</span> Cholesky/inverse per equation for the volatility step; it does <strong>not</strong> grow with the number of lags or regressors. Measured on a laptop (pure NumPy, single process):</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GP-VAR-8, T = 195, p = 5, 20 × 50 grid: pre-computation</td>
+<td>≈ 3 s</td>
+</tr>
+<tr>
+<td>GP-VAR-8: one MCMC sweep (dense-Hessian SV step)</td>
+<td>≈ 0.13 s (4 000 sweeps ≈ 10 min)</td>
+</tr>
+<tr>
+<td>GP-VAR-3 simulation (T = 195): one MCMC sweep</td>
+<td>≈ 0.04 s</td>
+</tr>
+<tr>
+<td>GIRF, 195 histories × 5 future paths × 16 horizons, all 8 equations</td>
+<td>≈ 1 s per posterior draw (threads over draws); the three shock configurations of example 3 (100 draws each) take ≈ 4 min</td>
+</tr>
+<tr>
+<td>Full example 3 (estimation + all GIRFs, figures and tables)</td>
+<td>≈ 15 min</td>
+</tr>
+</tbody>
+</table></div>
+<p>Memory: the eigendecompositions take <span class="arithmatex">\(2M\,n_\kappa T^2\)</span> doubles (≈ 100 MB for M = 8, T = 195, <span class="arithmatex">\(n_\kappa = 20\)</span>). For monthly data or M ≥ 32 reduce <code>n_kappa</code>, thin the GIRF draws (<code>n_draws</code>) and consider <code>sv_hessian="band"</code>.</p>
+<hr /><h2 id="13-repository-layout">13. Repository layout</h2>
+<pre><code>GP-VAR/
+├── gpvar/                    the library
+│   ├── model.py              GPVAR, GPVARResults (Gibbs sampler, Appendix A.4)
+│   ├── kernels.py            Gaussian kernels, median heuristic, hyper grid, eigen-blocks
+│   ├── sv.py                 independence-MH log-volatility sampler, SV parameters
+│   ├── priors.py             horseshoe, SV priors
+│   ├── predict.py            predictive engine shared by forecasts and GIRFs
+│   ├── girf.py               generalized impulse responses and asymmetry analysis
+│   ├── forecast.py           predictive simulation, LPL/LPBF/CRPS, recursive evaluation
+│   ├── benchmarks.py         Minnesota BVAR benchmark
+│   ├── simulate.py           Section 4 DGP and replication-archive DGP
+│   ├── gp.py                 univariate GP regression (Section 2 illustrations)
+│   ├── data.py               FRED-QD / JLN loaders, transformations, NBER dates
+│   ├── plots.py, tables.py   journal-style figures and Markdown/LaTeX tables
+│   └── datasets/             bundled data (see datasets/README.md)
+├── examples/                 01 GP illustration · 02 simulation · 03 US uncertainty · 04 forecast evaluation · run_all.py
+├── outputs/figures, outputs/tables   generated results (PDF/PNG, md/tex/csv)
+├── tests/                    pytest suite
+├── docs/METHODOLOGY.md       equation-by-equation mapping to the paper
+├── docs/USER_GUIDE.md        syntax guide (same content as Section 4)
+├── GPVAR_replication/        the authors' original R replication code (unchanged)
+└── 2112.01995v3.pdf is not distributed; download the paper from arXiv
+</code></pre>
+<hr /><h2 id="14-citation-license-acknowledgements">14. Citation, license, acknowledgements</h2>
+<p>If you use this code, please cite the original paper and this repository:</p>
+<pre><code class="language-bibtex">@article{hauzenberger2022gpvar,
+  title   = {Gaussian Process Vector Autoregressions and Macroeconomic Uncertainty},
+  author  = {Hauzenberger, Niko and Huber, Florian and Marcellino, Massimiliano and Petz, Nico},
+  journal = {Journal of Business \&amp; Economic Statistics (forthcoming); arXiv:2112.01995},
+  year    = {2022}
+}
+
+@software{roudane2026gpvar,
+  title   = {gpvar: Gaussian Process Vector Autoregressions with stochastic volatility in Python},
+  author  = {Roudane, Merwan},
+  year    = {2026},
+  url     = {https://github.com/merwanroudane/GP-VAR}
+}
+</code></pre>
+<p>Released under the MIT License. The FRED-QD data are provided by the Federal Reserve Bank of St. Louis; the uncertainty index by Jurado, Ludvigson and Ng (2015) — please cite them when using the data. The R code in <code>GPVAR_replication/</code> is the authors' replication archive and remains their work.</p>
+<p><strong>Dr Merwan Roudane</strong> — merwanroudane920@gmail.com — https://github.com/merwanroudane</p>
+</main>
+<footer class="wrap">
+  <p>gpvar · Dr Merwan Roudane · <a href="mailto:merwanroudane920@gmail.com">merwanroudane920@gmail.com</a> · <a href="https://github.com/merwanroudane/GP-VAR">github.com/merwanroudane/GP-VAR</a> · MIT License.<br>
+  Implements Hauzenberger, Huber, Marcellino and Petz (2022), <em>Gaussian Process Vector Autoregressions and Macroeconomic Uncertainty</em>, <a href="https://arxiv.org/abs/2112.01995">arXiv:2112.01995</a>. Data: FRED-QD (Federal Reserve Bank of St. Louis) and Jurado, Ludvigson and Ng (2015).</p>
+</footer>
+</body>
+</html>

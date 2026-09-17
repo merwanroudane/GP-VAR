@@ -912,6 +912,8 @@ GP-VAR/
 ├── tests/                    pytest suite
 ├── docs/METHODOLOGY.md       equation-by-equation mapping to the paper
 ├── docs/USER_GUIDE.md        syntax guide (same content as Section 4)
+├── docs/CONCEPTS.md          the concepts behind the model, explained
+├── docs/*.html, build_site.py  documentation site (GitHub Pages): https://merwanroudane.github.io/GP-VAR/
 ├── GPVAR_replication/        the authors' original R replication code (unchanged)
 └── 2112.01995v3.pdf is not distributed; download the paper from arXiv
 ```

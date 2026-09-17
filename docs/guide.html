@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>User guide · gpvar</title>
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Source+Sans+3:wght@400;600&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
+<script>
+MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap">
+    <div class="brand"><a href="index.html">gpvar</a><span class="tagline">Gaussian Process Vector Autoregressions with Stochastic Volatility in Python</span></div>
+    <nav><a href="index.html">Overview</a><a href="concepts.html">Concepts</a><a href="results.html">Results</a><a href="guide.html" class=active>User guide</a><a href="methodology.html">Methodology</a><a href="https://github.com/merwanroudane/GP-VAR">GitHub</a><a href="https://pypi.org/project/gpvar/">PyPI</a></nav>
+  </div>
+</header>
+<main class="wrap">
+<h1 class="pagetitle">User guide</h1>
+<p class="subtitle">Syntax reference: how to write code with gpvar</p>
+<p>This guide shows, step by step, how to write code with <code>gpvar</code>: from loading data to estimation, impulse responses, forecasts, tables and figures. Every code block is runnable as-is after <code>pip install gpvar</code>. All arrays follow the convention <strong>rows = time, columns = variables</strong>.</p>
+<p>Contents</p>
+<ol>
+<li><a href="#1-installation-and-imports">Installation and imports</a></li>
+<li><a href="#2-data">Data: loading, transforming, building a data set</a></li>
+<li><a href="#3-specifying-the-model">Specifying the model: <code>GPVAR(...)</code></a></li>
+<li><a href="#4-estimation">Estimation: <code>.fit(...)</code> and the results object</a></li>
+<li><a href="#5-reading-the-posterior">Reading the posterior: summaries and tables</a></li>
+<li><a href="#6-generalized-impulse-responses">Generalized impulse responses: <code>girf(...)</code></a></li>
+<li><a href="#7-asymmetries">Asymmetries: sign, size, time, business cycle</a></li>
+<li><a href="#8-forecasting">Forecasting: <code>predict(...)</code></a></li>
+<li><a href="#9-forecast-evaluation">Density-forecast evaluation and the BVAR benchmark</a></li>
+<li><a href="#10-figures">Figures</a></li>
+<li><a href="#11-tables">Tables (Markdown / LaTeX / CSV)</a></li>
+<li><a href="#12-simulated-data">Simulated data and Monte Carlo checks</a></li>
+<li><a href="#13-univariate-gp-regression">Univariate GP regression</a></li>
+<li><a href="#14-saving-loading-reproducibility-performance">Saving, loading, reproducibility, performance</a></li>
+<li><a href="#15-recipes">Recipes</a></li>
+<li><a href="#16-complete-signature-reference">Complete signature reference</a></li>
+</ol>
+<hr />
+<h2 id="1-installation-and-imports">1. Installation and imports</h2>
+<pre><code class="language-bash">pip install gpvar                # from PyPI
+# or, for the development version with examples and tests:
+git clone https://github.com/merwanroudane/GP-VAR.git &amp;&amp; cd GP-VAR &amp;&amp; pip install -e .[dev]
+</code></pre>
+<pre><code class="language-python">import gpvar                       # the library
+from gpvar import plots, tables    # figure and table helpers
+import numpy as np, pandas as pd
+</code></pre>
+<p>The top-level namespace exposes: <code>GPVAR</code>, <code>GPVARResults</code>, <code>girf</code>, <code>girf_sign_asymmetry</code>, <code>girf_size_asymmetry</code>, <code>GIRFResult</code>, <code>ordering_robustness</code>, <code>predict</code>, <code>ForecastResult</code>, <code>log_predictive_score</code>, <code>crps</code>, <code>recursive_forecast_evaluation</code>, <code>lpbf_table</code>, <code>BVAR</code>, <code>GPRegression</code>, <code>simulate_paper_dgp</code>, <code>simulate_replication_dgp</code>, <code>SVPriors</code>, and the sub-modules <code>data</code>, <code>plots</code>, <code>tables</code>, <code>kernels</code>, <code>sv</code>.</p>
+<hr />
+<h2 id="2-data">2. Data</h2>
+<h3 id="21-the-bundled-us-data-set-papers-gp-var-8-gp-var-16">2.1 The bundled US data set (paper's GP-VAR-8 / GP-VAR-16)</h3>
+<pre><code class="language-python">Y, info = gpvar.data.build_dataset(size=8, start=&quot;1970Q1&quot;, end=&quot;2019Q4&quot;)
+#   size   : 8 (UNC, RGDP, EMP, AWH, CPI, AHE, FFR, SP500) or 16 (adds PCE, FPI, UNRATE, AWHG, CLAIMS, HOUST, AHEALL, M2)
+#   start/end : quarters as &quot;YYYYQn&quot; (the sample can run to 2026Q2 with the bundled vintage)
+#   order  : optional list giving the variable ordering (matters for the recursive identification)
+#   uncertainty_h : 1, 3 or 12 (forecast horizon of the JLN uncertainty index; paper: 1)
+#   scheme : &quot;paper&quot; (Table B.1 transformations) or &quot;fred&quot; (FRED-QD codes)
+print(Y.shape)          # (200, 8) - a DataFrame with a quarterly DatetimeIndex (quarter ends)
+print(info)             # mnemonic, transformation code and description of every column
+</code></pre>
+<p>Other data helpers:</p>
+<pre><code class="language-python">fred, tcodes = gpvar.data.load_fred_qd_subset()        # 26 FRED-QD series 1959Q1-2026Q2 (levels) + FRED transformation codes
+unc = gpvar.data.load_jln_uncertainty(h=1, freq=&quot;Q&quot;)    # JLN macro uncertainty, quarterly average of the monthly index
+x = gpvar.data.transform_series(fred[&quot;GDPC1&quot;], code=2)  # code 1 none | 2 yoy growth | 3 qoq growth | 4 qoq % change
+desc = gpvar.data.describe(Y)                           # mean, sd, min, max, skewness, kurtosis, AR(1)
+rec = gpvar.data.recession_mask(Y.index)                # boolean array: NBER recession quarters
+gpvar.data.PAPER_SUBSAMPLES                             # {&quot;1970Q1-1984Q4 (great inflation)&quot;: (&quot;1970-01-01&quot;,&quot;1984-12-31&quot;), ...}
+fred_full, tcodes_full = gpvar.data.fetch_fred_qd()     # download the latest full FRED-QD vintage (internet required)
+</code></pre>
+<h3 id="22-using-your-own-data">2.2 Using your own data</h3>
+<p>Anything that is a <code>(T, M)</code> NumPy array or a <code>pandas.DataFrame</code> works. A DataFrame supplies the variable names and the dates automatically; with an array you can pass them explicitly.</p>
+<pre><code class="language-python"># DataFrame (recommended): column names become variable names, the index becomes the time axis
+Y_own = pd.read_csv(&quot;my_data.csv&quot;, index_col=0, parse_dates=True)          # rows = time, columns = variables
+model = gpvar.GPVAR(Y_own, p=4)
+
+# NumPy array
+A = np.random.default_rng(0).normal(size=(150, 4))
+model = gpvar.GPVAR(A, p=2, var_names=[&quot;gdp&quot;, &quot;infl&quot;, &quot;rate&quot;, &quot;stocks&quot;],
+                    dates=pd.date_range(&quot;1990-03-31&quot;, periods=150, freq=&quot;QE&quot;))
+</code></pre>
+<p>Rules of thumb: transform the series to be (approximately) stationary first (growth rates, yoy inflation, levels of rates); the model standardises each column internally (<code>standardize=True</code>) and reports GIRFs/forecasts in both standardised and original units.</p>
+<hr />
+<h2 id="3-specifying-the-model">3. Specifying the model</h2>
+<pre><code class="language-python">model = gpvar.GPVAR(
+    Y,                        # (T, M) DataFrame or array
+    p=5,                      # number of lags (paper: 5 for quarterly data)
+    standardize=True,         # demean and scale each column (undone in forecasts; GIRFs also available in original units)
+    sv=True,                  # stochastic volatility (False = homoskedastic GP-VAR)
+    hyper_scheme=&quot;semi-automatic&quot;,   # &quot;semi-automatic&quot; | &quot;semi-automatic-noscale&quot; | &quot;naive&quot;   (Section 3.3 / Table 2)
+    n_kappa=20, n_xi=50,      # grid sizes for the inverse length scale kappa and the scaling xi (paper: ~1000 points)
+    c_kappa=0.1, c_xi=1.0,    # prior means of the Gamma(1/2, 1/(2c)) hyperpriors (small c_kappa = smooth functions)
+    kappa_range=(0.1, 2.0),   # grid for kappa as multiples of the median heuristic kappa_bar
+    xi_range=(0.04, 4.0),     # grid for xi
+    hyper_sampling=&quot;marginal&quot;,   # &quot;marginal&quot; (blocked, default) | &quot;conditional&quot; (paper's Step 5/6 literally)
+    restrict_g_mean=True,     # grand-mean-zero identification of the other-lag function g_j
+    sv_priors=gpvar.SVPriors(rho_a=25, rho_b=5, sig2_a=3, sig2_b=0.2, mu_mean=0, mu_var=10, estimate_mu=True),
+    sv_hessian=&quot;dense&quot;,       # &quot;dense&quot; (exact Hessian in the volatility MH step) | &quot;band&quot; (paper's tridiagonal approximation)
+    sv_tries=3,               # accept/reject attempts per sweep from the same volatility proposal
+)
+</code></pre>
+<p>What you get before estimation:</p>
+<pre><code class="language-python">model.T, model.M, model.p            # effective sample size (T_raw - p), number of variables, lags
+model.y, model.X                     # standardised targets (T, M) and stacked lags (T, M*p): [y_{t-1}', ..., y_{t-p}']
+model.own_idx[j], model.other_idx[j] # columns of X that are own lags / other lags of equation j
+model.blocks_own[j].grid.kappa_bar   # median heuristic of equation j's own-lag kernel
+model.blocks_own[j].grid.kappa       # the kappa grid actually used (n_kappa,)
+model.mean_, model.sd_               # standardisation constants
+model.precompute_time                # seconds spent on the kernel eigendecompositions
+</code></pre>
+<p>Three specifications of the paper's Table 2:</p>
+<pre><code class="language-python">m_semi   = gpvar.GPVAR(Y, p=5, hyper_scheme=&quot;semi-automatic&quot;)          # grid on kappa and xi (preferred)
+m_noscl  = gpvar.GPVAR(Y, p=5, hyper_scheme=&quot;semi-automatic-noscale&quot;)  # grid on kappa, xi = 1
+m_naive  = gpvar.GPVAR(Y, p=5, hyper_scheme=&quot;naive&quot;)                   # kappa in [0.1, 2], xi = 1
+m_homo   = gpvar.GPVAR(Y, p=5, sv=False)                               # homoskedastic errors
+m_eq3    = gpvar.GPVAR(Y, p=5, sv_priors=gpvar.SVPriors(estimate_mu=False))   # eq. (3) literally (no SV mean)
+</code></pre>
+<hr />
+<h2 id="4-estimation">4. Estimation</h2>
+<pre><code class="language-python">res = model.fit(
+    nburn=2000,        # burn-in sweeps
+    nsave=2000,        # retained draws
+    thin=1,            # keep every thin-th sweep after burn-in
+    seed=1,            # reproducible
+    verbose=True,      # progress line every `print_every` sweeps with SV acceptance rates
+    print_every=250,
+    sv_init_sweeps=10, # first burn-in sweeps initialise the volatilities at the conditional mode
+)
+</code></pre>
+<p><code>res</code> is a <code>GPVARResults</code> with the posterior draws:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>attribute</th>
+<th>shape</th>
+<th>content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>res.f</code>, <code>res.g</code></td>
+<td><code>(nsave, T, M)</code></td>
+<td>own-lag and other-lag GP functions <span class="arithmatex">\(f_j\)</span>, <span class="arithmatex">\(g_j\)</span></td>
+</tr>
+<tr>
+<td><code>res.m</code></td>
+<td><code>(nsave, T, M)</code></td>
+<td>conditional mean <span class="arithmatex">\(m_j = f_j + g_j\)</span> (property)</td>
+</tr>
+<tr>
+<td><code>res.h</code>, <code>res.omega</code></td>
+<td><code>(nsave, T, M)</code></td>
+<td>log-volatilities and variances <span class="arithmatex">\(\omega_{jt} = e^{h_{jt}}\)</span></td>
+</tr>
+<tr>
+<td><code>res.Q</code></td>
+<td><code>(nsave, M, M)</code></td>
+<td>contemporaneous matrix (lower triangular, zero diagonal)</td>
+</tr>
+<tr>
+<td><code>res.hyper</code></td>
+<td><code>(nsave, M, 4)</code></td>
+<td><code>xi_own, kappa_own, xi_other, kappa_other</code></td>
+</tr>
+<tr>
+<td><code>res.hyper_idx</code></td>
+<td><code>(nsave, M, 4)</code></td>
+<td>grid indices of the above</td>
+</tr>
+<tr>
+<td><code>res.sv_params</code></td>
+<td><code>(nsave, M, 4)</code></td>
+<td><code>mu, rho, sig2, h0</code> of the SV state equation</td>
+</tr>
+<tr>
+<td><code>res.accept_rate</code></td>
+<td><code>(M,)</code></td>
+<td>independence-MH acceptance for the volatility paths</td>
+</tr>
+<tr>
+<td><code>res.runtime</code>, <code>res.config</code></td>
+<td></td>
+<td>seconds and the settings used</td>
+</tr>
+<tr>
+<td><code>res.model</code>, <code>res.y</code>, <code>res.dates</code>, <code>res.var_names</code></td>
+<td></td>
+<td>back-references to the model and data</td>
+</tr>
+</tbody>
+</table></div>
+<p>A quick estimation loop for several specifications:</p>
+<pre><code class="language-python">fits = {}
+for name, m in {&quot;SV&quot;: m_semi, &quot;homoskedastic&quot;: m_homo, &quot;naive grid&quot;: m_naive}.items():
+    fits[name] = m.fit(nburn=1000, nsave=1000, seed=1, verbose=False)
+    print(name, f&quot;{fits[name].runtime:.0f}s&quot;, fits[name].accept_rate.round(2))
+</code></pre>
+<hr />
+<h2 id="5-reading-the-posterior">5. Reading the posterior</h2>
+<pre><code class="language-python">res.hyper_summary()                 # DataFrame: variable, parameter, mean, q05..q95 for xi/kappa (own &amp; other)
+res.sv_summary()                    # same for mu, rho, sig2, h0
+res.Q_summary()                     # every free element of Q with mean, quantiles and P(q &gt; 0)
+res.fitted(probs=(0.05, 0.5, 0.95)) # dict {&quot;f&quot;, &quot;g&quot;, &quot;m&quot;} of arrays (len(probs), T, M)
+res.volatility(probs=(0.16, 0.5, 0.84))   # quantiles of exp(h/2), (3, T, M)
+res.shrinkage_paths()               # {&quot;own&quot;: (T, M), &quot;other&quot;: (T, M)} posterior means of omega_jt * xi (Figure 5)
+res.fit_correlations()              # correlation between posterior-median m_j and y_j (or a supplied truth)
+res.quantiles(res.m, probs=(0.16, 0.84))  # generic helper for any (nsave, ...) array
+</code></pre>
+<p>Turning them into time series for your own analysis:</p>
+<pre><code class="language-python">m_med = pd.DataFrame(np.median(res.m, axis=0), index=res.dates, columns=res.var_names)   # fitted conditional mean
+vol   = pd.DataFrame(res.volatility()[1], index=res.dates, columns=res.var_names)        # median volatility
+kappa_own = pd.Series(np.median(res.hyper[:, :, 1], axis=0), index=res.var_names)         # median kappa per equation
+</code></pre>
+<hr />
+<h2 id="6-generalized-impulse-responses">6. Generalized impulse responses</h2>
+<pre><code class="language-python">g = gpvar.girf(
+    res, &quot;UNC&quot;,              # results and the shocked variable (name or index)
+    size=1.0, sign=+1,       # shock size and sign
+    horizon=16,              # quarters after impact
+    histories=None,          # conditioning histories t (default: all T quarters); e.g. range(100, 195)
+    n_sim=5,                 # simulated future shock paths per history (Monte Carlo expectation)
+    n_draws=100,             # evenly spaced posterior draws
+    seed=0,
+    shock_scale=&quot;unit&quot;,      # &quot;unit&quot;: impact effect on the shocked variable = size (Figure 7 normalisation)
+                             # &quot;sd&quot;  : shock = size x exp(h_jt/2), the time-t structural standard deviation
+    sample_m=False,          # True adds the GP predictive variance of the conditional mean
+    n_jobs=None,             # threads over posterior draws (default: all cores)
+)
+# or equivalently: g = res.girf(&quot;UNC&quot;, size=1.0, sign=+1, horizon=16)
+</code></pre>
+<p><code>g</code> is a <code>GIRFResult</code>; <code>g.irf</code> has shape <code>(n_draws, n_hist, horizon+1, M)</code>.</p>
+<pre><code class="language-python">g.average()                             # (n_draws, horizon+1, M): average over histories (the paper's &quot;average GIRF&quot;)
+g.average(original_units=True)          # responses multiplied by the columns' standard deviations
+g.summary()                             # long DataFrame: variable, horizon, q16, q50, q84
+g.summary(probs=(0.05, 0.5, 0.95), label=&quot;positive&quot;)
+g.peak_table()                          # impact, peak, peak horizon, 68% band at the peak, cumulative response
+g.state_dependence()                    # dispersion of history-specific responses across quarters
+g.mask_from_dates(&quot;1985-01-01&quot;, &quot;2006-12-31&quot;)     # boolean mask over histories for any of the methods above
+g.by_periods(gpvar.data.PAPER_SUBSAMPLES)         # sub-sample averages (Figure 11)
+g.yearly_medians()                                # yearly averages of the posterior medians (Figure 12)
+g.hist_dates, g.var_names, g.shock_var, g.size, g.sign
+</code></pre>
+<p>History-specific responses (state dependence) directly:</p>
+<pre><code class="language-python">med = np.median(g.irf, axis=0)                     # (n_hist, horizon+1, M)
+resp_2008q4 = med[list(g.hist_dates).index(pd.Timestamp(&quot;2008-12-31&quot;))]   # (horizon+1, M) response conditional on 2008Q4
+</code></pre>
+<hr />
+<h2 id="7-asymmetries">7. Asymmetries</h2>
+<pre><code class="language-python"># Sign asymmetry (Figure 9)
+g_pos = gpvar.girf(res, &quot;UNC&quot;, sign=+1, n_draws=100, seed=1)
+g_neg = gpvar.girf(res, &quot;UNC&quot;, sign=-1, n_draws=100, seed=2)
+tables.asymmetry_table(g_pos, g_neg, horizons=(1, 4, 8))      # median of delta_pos + delta_neg and P(&gt;0); 0 under linearity
+
+# Size asymmetry (Figure 10)
+g_2sd = gpvar.girf(res, &quot;UNC&quot;, size=2.0, n_draws=100, seed=3)
+tables.size_asymmetry_table(g_pos, g_2sd)                    # ratio 2-sd / 1-sd responses; 2 under proportionality
+
+# Time variation (Figures 11 and 12)
+per = g_pos.by_periods(gpvar.data.PAPER_SUBSAMPLES)          # long table with a &quot;label&quot; column
+yearly = g_pos.yearly_medians()
+
+# Business cycle (Figure C.6)
+rec = gpvar.data.recession_mask(g_pos.hist_dates)
+in_rec, in_exp = g_pos.summary(rec, label=&quot;recessions&quot;), g_pos.summary(~rec, label=&quot;expansions&quot;)
+
+# Convenience wrappers
+both = gpvar.girf_sign_asymmetry(res, &quot;UNC&quot;, n_draws=100)          # {&quot;positive&quot;: GIRFResult, &quot;negative&quot;: GIRFResult}
+sizes = gpvar.girf_size_asymmetry(res, &quot;UNC&quot;, sizes=(1, 2), n_draws=100)
+
+# Robustness to the variable ordering (Appendix C.2) - re-estimates the model under random orderings
+rob = gpvar.ordering_robustness(Y, fixed_first=[&quot;UNC&quot;], shock_var=&quot;UNC&quot;, n_orderings=3,
+                                fit_kwargs=dict(nburn=300, nsave=300), girf_kwargs=dict(n_draws=30, n_sim=3),
+                                model_kwargs=dict(p=5))
+</code></pre>
+<hr />
+<h2 id="8-forecasting">8. Forecasting</h2>
+<pre><code class="language-python">fc = res.predict(horizon=8, n_sim=5, n_draws=None, seed=0, sample_m=True)   # or gpvar.predict(res, ...)
+fc.paths        # (n_draws * n_sim, horizon, M) in standardised units
+fc.paths_raw    # same in original units
+fc.quantiles(probs=(0.05, 0.16, 0.5, 0.84, 0.95))   # long DataFrame: variable, horizon, q05 ... q95 (original units)
+fc.mean()       # point forecasts (horizon x M)
+fc.origin_date  # last date of the estimation sample
+</code></pre>
+<p>Scoring a realised outcome:</p>
+<pre><code class="language-python">y_next = np.array([...])                                       # realised values one step ahead (original units), length M
+lpl_joint = gpvar.log_predictive_score(fc.paths_raw[:, 0, :], y_next)                 # Gaussian approximation, joint
+lpl_gdp   = gpvar.log_predictive_score(fc.paths_raw[:, 0, [1]], y_next[[1]], method=&quot;kde&quot;)   # univariate KDE
+score     = gpvar.crps(fc.paths_raw[:, 0, 1], y_next[1])                              # continuous ranked probability score
+</code></pre>
+<hr />
+<h2 id="9-forecast-evaluation">9. Forecast evaluation</h2>
+<p>Expanding-window evaluation for any model with the <code>fit()</code> / <code>predict()</code> interface:</p>
+<pre><code class="language-python">ev_gp = gpvar.recursive_forecast_evaluation(
+    Y, first_origin=&quot;2007-12-31&quot;, last_origin=&quot;2018-12-31&quot;, step=4,   # origins every 4 quarters
+    horizons=(1, 4), focus=[&quot;RGDP&quot;, &quot;CPI&quot;, &quot;FFR&quot;],
+    model_factory=lambda Yt: gpvar.GPVAR(Yt, p=5, sv=True),
+    fit_kwargs=dict(nburn=400, nsave=400, seed=1),
+    predict_kwargs=dict(n_sim=4, seed=0),
+    label=&quot;GP-VAR-8 SV&quot;)
+ev_bvar = gpvar.recursive_forecast_evaluation(
+    Y, first_origin=&quot;2007-12-31&quot;, last_origin=&quot;2018-12-31&quot;, step=4, horizons=(1, 4), focus=[&quot;RGDP&quot;, &quot;CPI&quot;, &quot;FFR&quot;],
+    model_factory=lambda Yt: gpvar.BVAR(Yt, p=5), fit_kwargs=dict(nsave=400, seed=1), label=&quot;BVAR-8&quot;)
+
+tab = gpvar.lpbf_table({&quot;GP-VAR-8 SV&quot;: ev_gp, &quot;BVAR-8&quot;: ev_bvar}, benchmark=&quot;BVAR-8&quot;)   # LPBFs relative to the benchmark
+plots.plot_lpl_cumulative({&quot;GP-VAR-8 SV&quot;: ev_gp, &quot;BVAR-8&quot;: ev_bvar}, horizon=4, variable=&quot;joint&quot;, benchmark=&quot;BVAR-8&quot;)
+</code></pre>
+<p>The Minnesota BVAR benchmark on its own:</p>
+<pre><code class="language-python">bv = gpvar.BVAR(Y, p=5, lam1=0.2, lam3=1.0, prior_mean=&quot;zero&quot;, intercept=True).fit(nsave=1000, seed=1)
+bv.predict(horizon=8, n_sim=2).quantiles()
+bv.irf(&quot;UNC&quot;, horizon=16, size=1.0, label=&quot;BVAR-8&quot;)     # Cholesky IRFs in the same long format as GIRF summaries
+</code></pre>
+<hr />
+<h2 id="10-figures">10. Figures</h2>
+<p>All plotting functions return a <code>matplotlib.figure.Figure</code>, accept <code>save="path/without/extension"</code> (writes <code>.pdf</code> and <code>.png</code> at 300 dpi) and <code>title=...</code>.</p>
+<pre><code class="language-python">plots.set_journal_style(font_size=9)                       # call once: serif fonts, thin axes, light grid, white background
+
+plots.plot_data(Y, ncols=4, save=&quot;fig_data&quot;)                                        # data panel with NBER shading
+plots.plot_shrinkage_paths(res, save=&quot;fig05&quot;)                                       # omega_jt * xi, own vs other (Figure 5)
+plots.plot_kernel_boxplots(res, save=&quot;fig06&quot;)                                       # kappa own/other per equation (Figure 6)
+plots.plot_volatility(res, ncols=4, save=&quot;fig_vol&quot;, truth=None)                     # exp(h/2) with 68% bands
+plots.plot_fit_components(res, truth={&quot;F&quot;: F, &quot;G&quot;: G, &quot;m&quot;: m}, save=&quot;fig03&quot;)        # f, g, m, y vs truth (Figure 3)
+plots.plot_trace(res, save=&quot;fig_trace&quot;)                                             # MCMC traces of kappa, xi, rho_h
+
+plots.plot_girf({&quot;GP-VAR-8&quot;: g_pos.summary(), &quot;BVAR-8&quot;: bv.irf(&quot;UNC&quot;)},            # any number of labelled summaries
+                variables=[&quot;UNC&quot;, &quot;RGDP&quot;, &quot;EMP&quot;, &quot;SP500&quot;], ncols=4,
+                colors={&quot;GP-VAR-8&quot;: plots.COL_POS, &quot;BVAR-8&quot;: plots.COL_GRAY},
+                legend_title=None, ylabel=&quot;&quot;, save=&quot;fig07&quot;)
+by_period = plots.combine_summaries({&quot;positive&quot;: g_pos.by_periods(gpvar.data.PAPER_SUBSAMPLES),
+                                     &quot;negative&quot;: g_neg.by_periods(gpvar.data.PAPER_SUBSAMPLES)})
+plots.plot_girf_periods(by_period, variables=[&quot;UNC&quot;, &quot;RGDP&quot;], save=&quot;fig11&quot;)        # rows = periods (Figure 11)
+plots.plot_girf_time_variation(g_pos.yearly_medians(), gpvar.data.PAPER_SUBSAMPLES, save=&quot;fig12&quot;)   # Figure 12
+plots.plot_forecast_fan(Y, fc, variables=None, n_hist=24, actual=None, save=&quot;fig_fan&quot;)
+plots.plot_gp_illustration(x, y, {&quot;kappa = 0.1&quot;: gpvar.GPRegression(&quot;gaussian&quot;, kappa=0.1)}, save=&quot;fig01&quot;)
+</code></pre>
+<p>Colour constants: <code>plots.COL_POS</code> (orange), <code>plots.COL_NEG</code> (blue), <code>plots.COL_GRAY</code>, <code>plots.COL_RED</code>, <code>plots.COL_BLUE</code>, <code>plots.COL_GREEN</code>, <code>plots.SERIES_COLORS</code>.</p>
+<hr />
+<h2 id="11-tables">11. Tables</h2>
+<pre><code class="language-python">tables.save_table(df, &quot;outputs/tables/my_table&quot;, caption=&quot;...&quot;, label=&quot;tab:x&quot;, floatfmt=&quot;{:.3f}&quot;, notes=&quot;...&quot;)
+# -&gt; my_table.md (Markdown), my_table.tex (LaTeX booktabs, with caption/label/notes), my_table.csv
+print(tables.to_markdown(df))          # string
+print(tables.to_latex(df, caption=&quot;Peak responses&quot;))
+
+tables.hyper_table(res)                          # median [IQR] of kappa and xi, own/other, per variable
+tables.sv_table(res)                             # median [5%, 95%] of mu, rho, sig2, h0
+tables.girf_horizon_table(g_pos, horizons=(0, 1, 4, 8, 12, 16))     # median [16%, 84%] at selected horizons
+tables.girf_peak_table({&quot;positive&quot;: g_pos, &quot;negative&quot;: g_neg})       # peaks for several GIRF sets
+tables.asymmetry_table(g_pos, g_neg); tables.size_asymmetry_table(g_pos, g_2sd)
+</code></pre>
+<hr />
+<h2 id="12-simulated-data">12. Simulated data</h2>
+<pre><code class="language-python">sim = gpvar.simulate_paper_dgp(T=200, p=5, seed=1)      # the Section 4 DGP (break, sine/quadratic, t_3 shocks, RW-SV)
+sim = gpvar.simulate_replication_dgp(T=120, M=3, p=2)   # the small tanh/sin DGP of the authors' R archive
+sim.Y, sim.F, sim.G, sim.m, sim.Q, sim.omega            # data (DataFrame) and the true latent components
+
+res_sim = gpvar.GPVAR(sim.Y, p=5).fit(nburn=1000, nsave=1000, seed=1, verbose=False)
+res_sim.fit_correlations(sim.m)                         # Table 1: corr(posterior median m_j, true m_j)
+plots.plot_fit_components(res_sim, truth={&quot;F&quot;: sim.F[5:], &quot;G&quot;: sim.G[5:], &quot;m&quot;: sim.m[5:]})
+</code></pre>
+<hr />
+<h2 id="13-univariate-gp-regression">13. Univariate GP regression</h2>
+<pre><code class="language-python">gp = gpvar.GPRegression(kernel=&quot;gaussian&quot;, kappa=0.1, xi=1.0, sigma2=None)   # sigma2=None -&gt; chosen by marginal likelihood
+gp.fit(x[:, None], y)
+mean, sd = gp.posterior()                     # at the training inputs
+mean_g, sd_g = gp.posterior(xgrid[:, None])   # at new inputs
+draws = gp.prior_draws(xgrid[:, None], n=3)   # draws from the GP prior
+gpvar.GPRegression(&quot;linear&quot;, v=1.0)           # Bayesian linear regression as a GP (kernel X V X')
+gpvar.GPRegression(&quot;persistence&quot;, r=0.01)     # local-level / random-walk kernel r B B' (Appendix A.1)
+</code></pre>
+<hr />
+<h2 id="14-saving-loading-reproducibility-performance">14. Saving, loading, reproducibility, performance</h2>
+<pre><code class="language-python">res.save(&quot;outputs/fit.pkl&quot;)                       # pickles the results (includes the model and its kernel blocks)
+res2 = gpvar.GPVARResults.load(&quot;outputs/fit.pkl&quot;)
+np.save(&quot;girf_pos.npy&quot;, g_pos.irf)                # GIRF draws are plain arrays
+</code></pre>
+<ul>
+<li>Reproducibility: pass <code>seed=</code> to <code>fit</code>, <code>girf</code>, <code>predict</code>; the GIRF threads use per-draw seeds, so results do not depend on the number of threads.</li>
+<li>Cost per MCMC sweep is <span class="arithmatex">\(O(M T^2)\)</span> plus one <span class="arithmatex">\(T \times T\)</span> Cholesky per equation; it does not depend on the number of lags. Typical: 0.13 s per sweep for <span class="arithmatex">\(M = 8\)</span>, <span class="arithmatex">\(T = 195\)</span> (about 10 minutes for 4000 sweeps).</li>
+<li>GIRFs: about 1 s per posterior draw for all 195 histories, 5 future paths and 16 horizons (multithreaded); 100 draws per shock configuration are enough for smooth bands.</li>
+<li>Memory: the kernel eigendecompositions take <span class="arithmatex">\(2 M n_\kappa T^2\)</span> doubles (100 MB for <span class="arithmatex">\(M=8\)</span>, <span class="arithmatex">\(T=195\)</span>, <span class="arithmatex">\(n_\kappa=20\)</span>). For monthly data or <span class="arithmatex">\(M \ge 32\)</span>: reduce <code>n_kappa</code>, use <code>sv_hessian="band"</code>, thin the GIRF draws.</li>
+<li>Check mixing with <code>res.accept_rate</code> (volatility MH; 0.2–0.9 is typical) and <code>plots.plot_trace(res)</code>.</li>
+</ul>
+<hr />
+<h2 id="15-recipes">15. Recipes</h2>
+<p><strong>A different shocked variable, original units, custom horizon</strong></p>
+<pre><code class="language-python">g_ffr = gpvar.girf(res, &quot;FFR&quot;, size=1.0, horizon=20, shock_scale=&quot;sd&quot;)        # a one-sd monetary shock (time-t sd)
+resp = g_ffr.summary(original_units=True)                                     # responses in the data's units
+</code></pre>
+<p><strong>Sample including the pandemic</strong></p>
+<pre><code class="language-python">Y_long, _ = gpvar.data.build_dataset(8, &quot;1970Q1&quot;, &quot;2025Q4&quot;)
+res_long = gpvar.GPVAR(Y_long, p=5).fit(nburn=2000, nsave=2000, seed=1)
+g = res_long.girf(&quot;UNC&quot;, n_draws=100)
+g.by_periods({&quot;pre-2020&quot;: (&quot;1970-01-01&quot;, &quot;2019-12-31&quot;), &quot;2020-2025&quot;: (&quot;2020-01-01&quot;, &quot;2025-12-31&quot;)})
+</code></pre>
+<p><strong>GP-VAR-16</strong></p>
+<pre><code class="language-python">Y16, info16 = gpvar.data.build_dataset(16, &quot;1970Q1&quot;, &quot;2019Q4&quot;)
+res16 = gpvar.GPVAR(Y16, p=5, n_kappa=15).fit(nburn=1500, nsave=1500, seed=1)
+</code></pre>
+<p><strong>Conditioning on particular histories only</strong></p>
+<pre><code class="language-python">idx = np.where(gpvar.data.recession_mask(res.dates))[0]                       # recession quarters
+g_rec = gpvar.girf(res, &quot;UNC&quot;, histories=idx, n_draws=100)
+</code></pre>
+<p><strong>Everything in one go</strong> — run the four example scripts (<code>examples/run_all.py</code>) to regenerate the full set of figures and tables in <code>outputs/</code>.</p>
+<hr />
+<h2 id="16-complete-signature-reference">16. Complete signature reference</h2>
+<pre><code class="language-python">gpvar.GPVAR(Y, p=5, var_names=None, dates=None, standardize=True, sv=True,
+            hyper_scheme=&quot;semi-automatic&quot;, n_kappa=20, n_xi=50, c_kappa=0.1, c_xi=1.0,
+            kappa_range=(0.1, 2.0), xi_range=(0.04, 4.0), hyper_sampling=&quot;marginal&quot;,
+            restrict_g_mean=True, sv_priors=None, sigma2_prior=(0.01, 0.01),
+            sv_proposal_df=None, sv_hessian=&quot;dense&quot;, sv_tries=3)
+GPVAR.fit(nburn=1000, nsave=1000, thin=1, seed=None, verbose=True, print_every=100, sv_init_sweeps=10) -&gt; GPVARResults
+
+GPVARResults.hyper_summary(probs) / sv_summary(probs) / Q_summary(probs) / fitted(probs) / volatility(probs)
+GPVARResults.shrinkage_paths() / fit_correlations(truth_m=None) / quantiles(arr, probs)
+GPVARResults.predict(horizon=8, n_sim=1, n_draws=None, seed=0, sample_m=True, verbose=False) -&gt; ForecastResult
+GPVARResults.girf(shock_var, **kwargs) -&gt; GIRFResult
+GPVARResults.save(path) / GPVARResults.load(path)
+
+gpvar.girf(results, shock_var, size=1.0, sign=1, horizon=16, histories=None, n_sim=5, n_draws=100,
+           seed=0, shock_scale=&quot;unit&quot;, sample_m=False, verbose=True, n_jobs=None) -&gt; GIRFResult
+GIRFResult.average(mask=None, original_units=False) / summary(mask, probs, original_units, label)
+GIRFResult.by_periods(periods, probs, original_units) / yearly_medians(mask, original_units)
+GIRFResult.peak_table(mask, original_units) / state_dependence(mask) / mask_from_dates(start, end)
+gpvar.girf_sign_asymmetry(results, shock_var, **kw) / girf_size_asymmetry(results, shock_var, sizes=(1, 2), **kw)
+gpvar.ordering_robustness(Y, fixed_first, shock_var, n_orderings=5, fit_kwargs=None, girf_kwargs=None, model_kwargs=None, seed=0)
+
+gpvar.predict(results, horizon=8, n_sim=1, n_draws=None, seed=0, sample_m=True, verbose=False) -&gt; ForecastResult
+ForecastResult.quantiles(probs, original_units=True) / mean(original_units=True)
+gpvar.log_predictive_score(draws, y_obs, method=&quot;gaussian&quot; | &quot;kde&quot;) / gpvar.crps(draws, y_obs)
+gpvar.recursive_forecast_evaluation(Y, first_origin, last_origin=None, step=1, horizons=(1, 4), focus=None,
+                                    model_factory=None, fit_kwargs=None, predict_kwargs=None,
+                                    score_method=&quot;gaussian&quot;, label=&quot;GP-VAR&quot;, verbose=True) -&gt; DataFrame
+gpvar.lpbf_table(evals: dict, benchmark: str) -&gt; DataFrame
+
+gpvar.BVAR(Y, p=5, lam1=0.2, lam2=0.5, lam3=1.0, lam_c=100.0, prior_mean=&quot;zero&quot;, intercept=True, standardize=True)
+BVAR.fit(nsave=1000, seed=None) -&gt; BVARResults;  BVARResults.predict(horizon, n_sim, n_draws, seed) / irf(shock_var, horizon, size, n_draws, probs, label)
+
+gpvar.GPRegression(kernel=&quot;gaussian&quot;, kappa=0.1, xi=1.0, v=1.0, r=0.01, sigma2=1.0, scale_inputs=False)
+GPRegression.fit(X, y) / posterior(Xnew=None) / prior_draws(X, n=3, seed=0) / prior_sd(X)
+
+gpvar.simulate_paper_dgp(T=200, p=5, seed=1, burn=100, break_point=None) -&gt; SimulatedData
+gpvar.simulate_replication_dgp(T=120, M=3, p=2, burn=200, seed=1) -&gt; SimulatedData
+
+gpvar.data.build_dataset(size=8, start=&quot;1970Q1&quot;, end=&quot;2019Q4&quot;, uncertainty_h=1, order=None, scheme=&quot;paper&quot;, fred=None)
+gpvar.data.load_fred_qd_subset() / load_jln_uncertainty(h=1, freq=&quot;Q&quot;, agg=&quot;mean&quot;) / fetch_fred_qd(url)
+gpvar.data.transform_series(x, code, scheme=&quot;paper&quot;) / standardize(Y) / recession_mask(dates) / describe(Y)
+
+gpvar.plots.set_journal_style(font_size=9); plot_data; plot_shrinkage_paths; plot_kernel_boxplots; plot_volatility;
+gpvar.plots.plot_fit_components; plot_trace; plot_girf; plot_girf_periods; plot_girf_time_variation; combine_summaries;
+gpvar.plots.plot_forecast_fan; plot_lpl_cumulative; plot_gp_illustration
+gpvar.tables.save_table; to_markdown; to_latex; hyper_table; sv_table; girf_horizon_table; girf_peak_table;
+gpvar.tables.asymmetry_table; size_asymmetry_table
+</code></pre>
+</main>
+<footer class="wrap">
+  <p>gpvar · Dr Merwan Roudane · <a href="mailto:merwanroudane920@gmail.com">merwanroudane920@gmail.com</a> · <a href="https://github.com/merwanroudane/GP-VAR">github.com/merwanroudane/GP-VAR</a> · MIT License.<br>
+  Implements Hauzenberger, Huber, Marcellino and Petz (2022), <em>Gaussian Process Vector Autoregressions and Macroeconomic Uncertainty</em>, <a href="https://arxiv.org/abs/2112.01995">arXiv:2112.01995</a>. Data: FRED-QD (Federal Reserve Bank of St. Louis) and Jurado, Ludvigson and Ng (2015).</p>
+</footer>
+</body>
+</html>

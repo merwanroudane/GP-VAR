@@ -1,0 +1,2075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Results · gpvar</title>
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Source+Sans+3:wght@400;600&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
+<script>
+MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap">
+    <div class="brand"><a href="index.html">gpvar</a><span class="tagline">Gaussian Process Vector Autoregressions with Stochastic Volatility in Python</span></div>
+    <nav><a href="index.html">Overview</a><a href="concepts.html">Concepts</a><a href="results.html" class=active>Results</a><a href="guide.html">User guide</a><a href="methodology.html">Methodology</a><a href="https://github.com/merwanroudane/GP-VAR">GitHub</a><a href="https://pypi.org/project/gpvar/">PyPI</a></nav>
+  </div>
+</header>
+<main class="wrap">
+<h1 class="pagetitle">Results</h1>
+<p class="subtitle">Uncertainty shocks in the US economy, 1970Q1-2019Q4: all outputs of the real-data application</p>
+<p>Every figure and table produced by <code>examples/03_us_uncertainty_gpvar8.py</code>, <code>02_simulation_study.py</code>, <code>01_gp_regression_illustration.py</code> and <code>04_forecast_evaluation.py</code> on the bundled data. Responses are in standard-deviation units of the standardised data unless stated otherwise; bands are 68 % posterior credible sets; figures are also available as vector PDFs and tables as LaTeX (booktabs) and CSV in <code>outputs/</code> of the repository.</p>
+<h2 id="real-economic-example-uncertainty-shocks-in-the-us-gp-var-8">Real economic example: uncertainty shocks in the US (GP-VAR-8)</h2>
+<p><code>examples/03_us_uncertainty_gpvar8.py</code> re-runs the paper's Section 5–6 analysis on real data.</p>
+<h3 id="51-data">5.1 Data</h3>
+<p>Quarterly US data 1970Q1–2019Q4 (T = 200), the eight variables of the paper's GP-VAR-8 (Online Appendix Table B.1):</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Source series</th>
+<th>Transformation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UNC</td>
+<td>JLN macroeconomic uncertainty, h = 1 (Jurado, Ludvigson and Ng, 2015; quarterly average)</td>
+<td>level</td>
+</tr>
+<tr>
+<td>RGDP</td>
+<td>GDPC1, real GDP</td>
+<td>year-on-year growth (%)</td>
+</tr>
+<tr>
+<td>EMP</td>
+<td>CE16OV, civilian employment</td>
+<td>year-on-year growth (%)</td>
+</tr>
+<tr>
+<td>AWH</td>
+<td>AWHMAN, average weekly hours, manufacturing</td>
+<td>level</td>
+</tr>
+<tr>
+<td>CPI</td>
+<td>CPIAUCSL, consumer price index</td>
+<td>year-on-year inflation (%)</td>
+</tr>
+<tr>
+<td>AHE</td>
+<td>CES3000000008x, real average hourly earnings, manufacturing</td>
+<td>year-on-year growth (%)</td>
+</tr>
+<tr>
+<td>FFR</td>
+<td>FEDFUNDS, effective federal funds rate</td>
+<td>level (%)</td>
+</tr>
+<tr>
+<td>SP500</td>
+<td>S&amp;P 500 composite</td>
+<td>quarter-on-quarter return (%)</td>
+</tr>
+</tbody>
+</table></div>
+<p><img alt="data" src="figures/gpvar8_data.png" /></p>
+<p>The model is estimated on standardised data with <span class="arithmatex">\(p = 5\)</span> lags, stochastic volatility, the semi-automatic <span class="arithmatex">\((\kappa,\xi)\)</span> grid (20 × 50 points), 2 000 burn-in and 2 000 posterior draws; GIRFs use 100 evenly spaced posterior draws, all 195 histories and 5 simulated future paths per history. Uncertainty is ordered first (an uncertainty shock moves every variable on impact; the paper shows in Appendix C.2 that the ordering has a negligible effect on the GIRFs — <code>gpvar.ordering_robustness</code> reproduces that check).</p>
+<h3 id="52-in-sample-features-figures-5-and-6-of-the-paper">5.2 In-sample features (Figures 5 and 6 of the paper)</h3>
+<p>Posterior means of the "linear shrinkage" <span class="arithmatex">\(\omega_{jt}\xi_{j\cdot}\)</span> — the diagonal of the re-scaled kernels — for own and other lags (recessions shaded). As in the paper, less shrinkage is applied to own lags than to other lags and the amount of shrinkage rises sharply in recessions (early 1980s, 2008–09):</p>
+<p><img alt="fig5" src="figures/gpvar8_fig05_shrinkage.png" /></p>
+<p>Posterior interquartile ranges of the inverse length scales <span class="arithmatex">\(\kappa_{j1}\)</span> (own lags, blue) and <span class="arithmatex">\(\kappa_{j2}\)</span> (other lags, green). Own-lag kernels are consistently "rougher" (larger <span class="arithmatex">\(\kappa\)</span>) than other-lag kernels, whose effect is close to linear:</p>
+<p><img alt="fig6" src="figures/gpvar8_fig06_kappa.png" /></p>
+<p>Posterior summaries of the kernel hyperparameters (median and interquartile range; <span class="arithmatex">\(\xi\)</span> on the paper's grid <span class="arithmatex">\([0.04, 4]\)</span>, <span class="arithmatex">\(\kappa\)</span> on <span class="arithmatex">\([0.1\bar\kappa, 2\bar\kappa]\)</span>) and of the stochastic-volatility state equations. Independence-MH acceptance rates for the log-volatility paths: UNC 0.72, RGDP 0.84, EMP 0.89, AWH 0.80, CPI 0.44, AHE 0.81, FFR 0.09, SP500 0.59 (the FFR equation is the hardest one because its conditional variance collapses at the zero lower bound, as the paper notes).</p>
+<p><strong>Kernel hyperparameters</strong> (<code>outputs/tables/gpvar8_hyperparameters</code>):</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>kappa own</th>
+<th>xi own</th>
+<th>kappa other</th>
+<th>xi other</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UNC</td>
+<td>0.171 [0.114, 0.171]</td>
+<td>3.838 [3.677, 4.000]</td>
+<td>0.027 [0.013, 0.040]</td>
+<td>0.121 [0.040, 0.363]</td>
+</tr>
+<tr>
+<td>RGDP</td>
+<td>0.084 [0.084, 0.126]</td>
+<td>3.515 [3.111, 3.838]</td>
+<td>0.027 [0.014, 0.027]</td>
+<td>2.788 [2.060, 3.434]</td>
+</tr>
+<tr>
+<td>EMP</td>
+<td>0.130 [0.087, 0.130]</td>
+<td>3.758 [3.515, 3.919]</td>
+<td>0.042 [0.028, 0.056]</td>
+<td>2.060 [1.252, 2.869]</td>
+</tr>
+<tr>
+<td>AWH</td>
+<td>0.169 [0.126, 0.211]</td>
+<td>3.758 [3.515, 3.919]</td>
+<td>0.014 [0.014, 0.014]</td>
+<td>3.030 [2.464, 3.515]</td>
+</tr>
+<tr>
+<td>CPI</td>
+<td>0.237 [0.177, 0.237]</td>
+<td>3.919 [3.758, 4.000]</td>
+<td>0.054 [0.027, 0.081]</td>
+<td>0.525 [0.202, 1.010]</td>
+</tr>
+<tr>
+<td>AHE</td>
+<td>0.170 [0.128, 0.213]</td>
+<td>3.758 [3.596, 3.919]</td>
+<td>0.072 [0.029, 0.130]</td>
+<td>0.040 [0.040, 0.202]</td>
+</tr>
+<tr>
+<td>FFR</td>
+<td>0.400 [0.356, 0.489]</td>
+<td>3.919 [3.838, 4.000]</td>
+<td>0.054 [0.027, 0.081]</td>
+<td>0.282 [0.040, 0.767]</td>
+</tr>
+<tr>
+<td>SP500</td>
+<td>0.080 [0.040, 0.200]</td>
+<td>0.040 [0.040, 0.121]</td>
+<td>0.098 [0.070, 0.154]</td>
+<td>0.929 [0.525, 1.414]</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>SV state-equation parameters</strong> (<code>outputs/tables/gpvar8_sv_parameters</code>):</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>mu_h</th>
+<th>rho_h</th>
+<th>sigma^2_h</th>
+<th>h_0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UNC</td>
+<td>-2.477 [-2.732, -2.230]</td>
+<td>0.789 [0.638, 0.887]</td>
+<td>0.067 [0.037, 0.123]</td>
+<td>-2.614 [-3.311, -1.862]</td>
+</tr>
+<tr>
+<td>RGDP</td>
+<td>-2.396 [-2.673, -2.088]</td>
+<td>0.756 [0.564, 0.879]</td>
+<td>0.068 [0.032, 0.154]</td>
+<td>-2.424 [-3.160, -1.732]</td>
+</tr>
+<tr>
+<td>EMP</td>
+<td>-2.997 [-3.315, -2.692]</td>
+<td>0.746 [0.557, 0.875]</td>
+<td>0.053 [0.031, 0.103]</td>
+<td>-2.980 [-3.583, -2.369]</td>
+</tr>
+<tr>
+<td>AWH</td>
+<td>-3.232 [-3.501, -3.023]</td>
+<td>0.767 [0.559, 0.894]</td>
+<td>0.038 [0.023, 0.068]</td>
+<td>-3.033 [-3.493, -2.494]</td>
+</tr>
+<tr>
+<td>CPI</td>
+<td>-3.361 [-3.795, -3.024]</td>
+<td>0.869 [0.771, 0.924]</td>
+<td>0.076 [0.038, 0.122]</td>
+<td>-3.446 [-4.242, -2.677]</td>
+</tr>
+<tr>
+<td>AHE</td>
+<td>-2.157 [-2.467, -1.898]</td>
+<td>0.790 [0.590, 0.902]</td>
+<td>0.056 [0.032, 0.102]</td>
+<td>-1.938 [-2.573, -1.341]</td>
+</tr>
+<tr>
+<td>FFR</td>
+<td>-4.055 [-4.551, -3.518]</td>
+<td>0.934 [0.889, 0.965]</td>
+<td>0.055 [0.036, 0.079]</td>
+<td>-3.875 [-4.700, -3.087]</td>
+</tr>
+<tr>
+<td>SP500</td>
+<td>-0.945 [-1.498, -0.493]</td>
+<td>0.705 [0.487, 0.841]</td>
+<td>0.304 [0.134, 0.779]</td>
+<td>-0.989 [-2.381, 0.287]</td>
+</tr>
+</tbody>
+</table></div>
+<p>The contemporaneous coefficients of <span class="arithmatex">\(Q\)</span> (horseshoe prior) are in <code>outputs/tables/gpvar8_Q.md</code>: e.g. the impact effect of uncertainty on GDP growth, <span class="arithmatex">\(q_{\mathrm{RGDP,UNC}}\)</span>, has posterior median <span class="arithmatex">\(-0.20\)</span> with <span class="arithmatex">\(P(q&gt;0)=0.004\)</span>.</p>
+<h3 id="53-uncertainty-shocks-gp-var-8-versus-a-linear-bvar-figure-7">5.3 Uncertainty shocks: GP-VAR-8 versus a linear BVAR (Figure 7)</h3>
+<p>Average generalized impulse responses (posterior median and 68 % bands, averaged over all 195 histories) to a positive one-standard-deviation uncertainty shock, compared with the recursive IRFs of a Minnesota BVAR-8 estimated on the same data:</p>
+<p><img alt="fig7" src="figures/gpvar8_fig07_girf_vs_bvar_focus.png" /></p>
+<p><img alt="figC4" src="figures/gpvar8_figC4_girf_vs_bvar_nonfocus.png" /></p>
+<p>Both models agree on the qualitative picture (higher uncertainty lowers output growth, employment, hours, stock returns and the policy rate), but the GP-VAR responses of real activity peak later (five to six quarters after the shock versus three for the BVAR) and die out more slowly, and stock prices react on impact more mildly than in the linear model. Average GIRFs to a positive one-standard-deviation shock at selected horizons (posterior median and 68 % band, responses in standard-deviation units of the standardised data):</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>h=0</th>
+<th>h=1</th>
+<th>h=4</th>
+<th>h=8</th>
+<th>h=12</th>
+<th>h=16</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UNC</td>
+<td>1.000 [1.000, 1.000]</td>
+<td>0.885 [0.826, 0.919]</td>
+<td>0.679 [0.571, 0.767]</td>
+<td>0.219 [0.139, 0.339]</td>
+<td>-0.010 [-0.066, 0.061]</td>
+<td>-0.053 [-0.098, -0.004]</td>
+</tr>
+<tr>
+<td>RGDP</td>
+<td>-0.195 [-0.246, -0.120]</td>
+<td>-0.289 [-0.340, -0.208]</td>
+<td>-0.487 [-0.568, -0.426]</td>
+<td>-0.430 [-0.507, -0.335]</td>
+<td>-0.100 [-0.165, -0.028]</td>
+<td>-0.008 [-0.059, 0.058]</td>
+</tr>
+<tr>
+<td>EMP</td>
+<td>-0.087 [-0.146, -0.052]</td>
+<td>-0.192 [-0.250, -0.139]</td>
+<td>-0.408 [-0.466, -0.322]</td>
+<td>-0.419 [-0.515, -0.338]</td>
+<td>-0.163 [-0.250, -0.088]</td>
+<td>-0.002 [-0.064, 0.053]</td>
+</tr>
+<tr>
+<td>AWH</td>
+<td>-0.156 [-0.207, -0.109]</td>
+<td>-0.215 [-0.269, -0.173]</td>
+<td>-0.260 [-0.309, -0.208]</td>
+<td>-0.222 [-0.317, -0.151]</td>
+<td>-0.050 [-0.111, 0.017]</td>
+<td>0.056 [-0.001, 0.111]</td>
+</tr>
+<tr>
+<td>CPI</td>
+<td>0.049 [0.006, 0.094]</td>
+<td>0.063 [0.004, 0.119]</td>
+<td>0.035 [-0.027, 0.101]</td>
+<td>-0.040 [-0.090, 0.022]</td>
+<td>-0.052 [-0.097, -0.000]</td>
+<td>-0.039 [-0.067, 0.000]</td>
+</tr>
+<tr>
+<td>AHE</td>
+<td>0.021 [-0.008, 0.053]</td>
+<td>0.029 [-0.015, 0.084]</td>
+<td>0.012 [-0.042, 0.095]</td>
+<td>-0.021 [-0.075, 0.055]</td>
+<td>-0.045 [-0.087, 0.023]</td>
+<td>-0.038 [-0.078, 0.014]</td>
+</tr>
+<tr>
+<td>FFR</td>
+<td>-0.024 [-0.043, -0.008]</td>
+<td>-0.054 [-0.076, -0.028]</td>
+<td>-0.138 [-0.175, -0.105]</td>
+<td>-0.239 [-0.287, -0.200]</td>
+<td>-0.221 [-0.275, -0.180]</td>
+<td>-0.160 [-0.214, -0.119]</td>
+</tr>
+<tr>
+<td>SP500</td>
+<td>-0.071 [-0.204, 0.008]</td>
+<td>-0.101 [-0.200, -0.042]</td>
+<td>-0.216 [-0.309, -0.152]</td>
+<td>-0.090 [-0.124, -0.033]</td>
+<td>-0.007 [-0.037, 0.019]</td>
+<td>0.009 [-0.010, 0.026]</td>
+</tr>
+</tbody>
+</table></div>
+<p><em>Notes:</em> Responses in standard-deviation units of the (standardised) variables; horizons in quarters.</p>
+<p>Peak responses (<code>outputs/tables/gpvar8_girf_peaks</code>) for the three shock configurations:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>shock</th>
+<th>variable</th>
+<th>impact</th>
+<th>peak</th>
+<th>peak_horizon</th>
+<th>peak_q16</th>
+<th>peak_q84</th>
+<th>cumulative</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>positive 1 sd</td>
+<td>UNC</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>0</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>5.394</td>
+</tr>
+<tr>
+<td>positive 1 sd</td>
+<td>RGDP</td>
+<td>-0.195</td>
+<td>-0.543</td>
+<td>6</td>
+<td>-0.631</td>
+<td>-0.450</td>
+<td>-4.740</td>
+</tr>
+<tr>
+<td>positive 1 sd</td>
+<td>EMP</td>
+<td>-0.087</td>
+<td>-0.451</td>
+<td>6</td>
+<td>-0.547</td>
+<td>-0.368</td>
+<td>-4.323</td>
+</tr>
+<tr>
+<td>positive 1 sd</td>
+<td>AWH</td>
+<td>-0.156</td>
+<td>-0.281</td>
+<td>6</td>
+<td>-0.358</td>
+<td>-0.218</td>
+<td>-2.488</td>
+</tr>
+<tr>
+<td>positive 1 sd</td>
+<td>CPI</td>
+<td>0.049</td>
+<td>0.065</td>
+<td>2</td>
+<td>-0.000</td>
+<td>0.120</td>
+<td>-0.150</td>
+</tr>
+<tr>
+<td>positive 1 sd</td>
+<td>AHE</td>
+<td>0.021</td>
+<td>-0.046</td>
+<td>13</td>
+<td>-0.093</td>
+<td>0.018</td>
+<td>-0.249</td>
+</tr>
+<tr>
+<td>positive 1 sd</td>
+<td>FFR</td>
+<td>-0.024</td>
+<td>-0.242</td>
+<td>9</td>
+<td>-0.295</td>
+<td>-0.204</td>
+<td>-2.903</td>
+</tr>
+<tr>
+<td>positive 1 sd</td>
+<td>SP500</td>
+<td>-0.071</td>
+<td>-0.216</td>
+<td>4</td>
+<td>-0.309</td>
+<td>-0.152</td>
+<td>-1.373</td>
+</tr>
+<tr>
+<td>negative 1 sd</td>
+<td>UNC</td>
+<td>-1.000</td>
+<td>-1.000</td>
+<td>0</td>
+<td>-1.000</td>
+<td>-1.000</td>
+<td>-3.726</td>
+</tr>
+<tr>
+<td>negative 1 sd</td>
+<td>RGDP</td>
+<td>0.195</td>
+<td>0.341</td>
+<td>5</td>
+<td>0.291</td>
+<td>0.387</td>
+<td>3.078</td>
+</tr>
+<tr>
+<td>negative 1 sd</td>
+<td>EMP</td>
+<td>0.087</td>
+<td>0.261</td>
+<td>3</td>
+<td>0.208</td>
+<td>0.311</td>
+<td>2.551</td>
+</tr>
+<tr>
+<td>negative 1 sd</td>
+<td>AWH</td>
+<td>0.156</td>
+<td>0.201</td>
+<td>1</td>
+<td>0.159</td>
+<td>0.251</td>
+<td>1.724</td>
+</tr>
+<tr>
+<td>negative 1 sd</td>
+<td>CPI</td>
+<td>-0.049</td>
+<td>-0.062</td>
+<td>1</td>
+<td>-0.115</td>
+<td>-0.005</td>
+<td>-0.286</td>
+</tr>
+<tr>
+<td>negative 1 sd</td>
+<td>AHE</td>
+<td>-0.021</td>
+<td>-0.028</td>
+<td>1</td>
+<td>-0.078</td>
+<td>0.015</td>
+<td>0.148</td>
+</tr>
+<tr>
+<td>negative 1 sd</td>
+<td>FFR</td>
+<td>0.024</td>
+<td>0.148</td>
+<td>9</td>
+<td>0.120</td>
+<td>0.183</td>
+<td>1.886</td>
+</tr>
+<tr>
+<td>negative 1 sd</td>
+<td>SP500</td>
+<td>0.071</td>
+<td>0.143</td>
+<td>4</td>
+<td>0.094</td>
+<td>0.195</td>
+<td>0.871</td>
+</tr>
+<tr>
+<td>positive 2 sd</td>
+<td>UNC</td>
+<td>2.000</td>
+<td>2.000</td>
+<td>0</td>
+<td>2.000</td>
+<td>2.000</td>
+<td>7.534</td>
+</tr>
+<tr>
+<td>positive 2 sd</td>
+<td>RGDP</td>
+<td>-0.390</td>
+<td>-0.847</td>
+<td>5</td>
+<td>-0.968</td>
+<td>-0.714</td>
+<td>-6.345</td>
+</tr>
+<tr>
+<td>positive 2 sd</td>
+<td>EMP</td>
+<td>-0.174</td>
+<td>-0.709</td>
+<td>5</td>
+<td>-0.827</td>
+<td>-0.593</td>
+<td>-6.129</td>
+</tr>
+<tr>
+<td>positive 2 sd</td>
+<td>AWH</td>
+<td>-0.311</td>
+<td>-0.440</td>
+<td>5</td>
+<td>-0.557</td>
+<td>-0.337</td>
+<td>-3.474</td>
+</tr>
+<tr>
+<td>positive 2 sd</td>
+<td>CPI</td>
+<td>0.098</td>
+<td>0.112</td>
+<td>1</td>
+<td>0.007</td>
+<td>0.214</td>
+<td>-0.531</td>
+</tr>
+<tr>
+<td>positive 2 sd</td>
+<td>AHE</td>
+<td>0.041</td>
+<td>-0.064</td>
+<td>12</td>
+<td>-0.129</td>
+<td>0.032</td>
+<td>-0.308</td>
+</tr>
+<tr>
+<td>positive 2 sd</td>
+<td>FFR</td>
+<td>-0.048</td>
+<td>-0.357</td>
+<td>8</td>
+<td>-0.413</td>
+<td>-0.298</td>
+<td>-4.287</td>
+</tr>
+<tr>
+<td>positive 2 sd</td>
+<td>SP500</td>
+<td>-0.143</td>
+<td>-0.313</td>
+<td>3</td>
+<td>-0.466</td>
+<td>-0.184</td>
+<td>-1.818</td>
+</tr>
+</tbody>
+</table></div>
+<p><em>Notes:</em> Peak = largest absolute posterior-median response; 68\% credible interval at the peak horizon; cumulative = sum of median responses over 0-16 quarters.</p>
+<h3 id="54-sign-and-size-asymmetries-figures-9-and-10">5.4 Sign and size asymmetries (Figures 9 and 10)</h3>
+<p>Responses to a positive (orange) and a negative (blue) shock, with the negative response mirrored (grey) so that a linear model would give identical orange and grey lines:</p>
+<p><img alt="fig9" src="figures/gpvar8_fig09_sign_asymmetry_focus.png" /></p>
+<p>Responses to a one- and a two-standard-deviation shock, with the latter halved (grey) — proportionality would make orange and grey coincide:</p>
+<p><img alt="fig10" src="figures/gpvar8_fig10_size_asymmetry_focus.png" /></p>
+<p>The asymmetries are statistically sharp. <strong>Sign asymmetry</strong>: posterior median of <span class="arithmatex">\(\delta^+_h + \delta^-_h\)</span> (zero under linearity) with the posterior probability that it is positive:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>h=1</th>
+<th>h=4</th>
+<th>h=8</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UNC</td>
+<td>0.098 (1.00)</td>
+<td>0.291 (1.00)</td>
+<td>0.092 (0.93)</td>
+</tr>
+<tr>
+<td>RGDP</td>
+<td>-0.023 (0.00)</td>
+<td>-0.170 (0.00)</td>
+<td>-0.178 (0.00)</td>
+</tr>
+<tr>
+<td>EMP</td>
+<td>-0.010 (0.00)</td>
+<td>-0.142 (0.00)</td>
+<td>-0.197 (0.00)</td>
+</tr>
+<tr>
+<td>AWH</td>
+<td>-0.015 (0.00)</td>
+<td>-0.100 (0.00)</td>
+<td>-0.090 (0.00)</td>
+</tr>
+<tr>
+<td>CPI</td>
+<td>0.001 (0.64)</td>
+<td>-0.003 (0.46)</td>
+<td>-0.043 (0.07)</td>
+</tr>
+<tr>
+<td>AHE</td>
+<td>0.002 (0.77)</td>
+<td>0.009 (0.65)</td>
+<td>-0.000 (0.49)</td>
+</tr>
+<tr>
+<td>FFR</td>
+<td>-0.003 (0.04)</td>
+<td>-0.037 (0.00)</td>
+<td>-0.094 (0.00)</td>
+</tr>
+<tr>
+<td>SP500</td>
+<td>-0.022 (0.01)</td>
+<td>-0.075 (0.01)</td>
+<td>-0.030 (0.16)</td>
+</tr>
+</tbody>
+</table></div>
+<p><em>Notes:</em> Under a linear model the responses to positive and negative shocks are mirror images and the statistic is zero.</p>
+<p>Positive uncertainty shocks produce a <em>larger</em> endogenous uncertainty response and larger declines in GDP growth, employment, hours and stock returns than the mirror image of negative shocks, which is the paper's central result ("higher unexpected uncertainty has stronger effects on the economy than lower uncertainty"). <strong>Size asymmetry</strong>: ratio of the response to a 2-sd shock to the response to a 1-sd shock (2 under proportionality):</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>h=1</th>
+<th>h=4</th>
+<th>h=8</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UNC</td>
+<td>1.76</td>
+<td>1.38</td>
+<td>0.72</td>
+</tr>
+<tr>
+<td>RGDP</td>
+<td>1.84</td>
+<td>1.64</td>
+<td>1.11</td>
+</tr>
+<tr>
+<td>EMP</td>
+<td>1.88</td>
+<td>1.67</td>
+<td>1.34</td>
+</tr>
+<tr>
+<td>AWH</td>
+<td>1.83</td>
+<td>1.62</td>
+<td>1.26</td>
+</tr>
+<tr>
+<td>CPI</td>
+<td>1.76</td>
+<td>0.51</td>
+<td>2.62</td>
+</tr>
+<tr>
+<td>AHE</td>
+<td>1.95</td>
+<td>1.05</td>
+<td>1.50</td>
+</tr>
+<tr>
+<td>FFR</td>
+<td>1.90</td>
+<td>1.68</td>
+<td>1.50</td>
+</tr>
+<tr>
+<td>SP500</td>
+<td>1.93</td>
+<td>1.40</td>
+<td>0.92</td>
+</tr>
+</tbody>
+</table></div>
+<p><em>Notes:</em> Equal to 2 under proportionality (linear model).</p>
+<p>Large shocks have less-than-proportional effects on real activity (ratios of 1.6-1.7 at one year), exactly as in Figure 10 of the paper. Peak responses by sub-sample (<code>outputs/tables/gpvar8_girf_peaks_by_period</code>) show that the effects were weakest in the great-inflation period and strongest during the great moderation (peak GDP-growth response <span class="arithmatex">\(-0.35\)</span> vs <span class="arithmatex">\(-0.68\)</span> standard deviations), in line with the paper's Figure 11.</p>
+<h3 id="55-asymmetries-over-time-figures-11-12-and-c6">5.5 Asymmetries over time (Figures 11, 12 and C.6)</h3>
+<p>Sub-sample averages of the GIRFs (great inflation 1970Q1–1984Q4, great moderation 1985Q1–2006Q4, post-great-moderation 2007Q1–2019Q4):</p>
+<p><img alt="fig11" src="figures/gpvar8_fig11_subsamples_focus.png" /></p>
+<p>Yearly averages of the posterior-median GIRFs within each sub-sample (yellow = start of the period, red = end):</p>
+<p><img alt="fig12" src="figures/gpvar8_fig12_time_variation_focus.png" /></p>
+<p>GIRFs conditional on the state of the business cycle (NBER expansions versus recessions):</p>
+<p><img alt="figC6" src="figures/gpvar8_figC6_recessions_expansions.png" /></p>
+<h3 id="56-volatility-diagnostics-and-forecasts">5.6 Volatility, diagnostics and forecasts</h3>
+<p><img alt="vol" src="figures/gpvar8_volatility.png" /></p>
+<p>Predictive distribution eight quarters beyond the end of the sample (5/16/50/84/95 % quantiles):</p>
+<p><img alt="fan" src="figures/gpvar8_forecast_fan.png" /></p>
+<p>MCMC traces of <span class="arithmatex">\(\kappa\)</span>, <span class="arithmatex">\(\xi\)</span> and <span class="arithmatex">\(\rho_h\)</span> per equation are in <code>outputs/figures/gpvar8_mcmc_traces.png</code>; the non-focus-variable versions of every GIRF figure (<code>figC4</code>, <code>figC5</code>, <code>figC7</code>, <code>figC9</code>, <code>figC10</code>) and all tables are in <code>outputs/</code>.</p>
+<hr />
+<h2>Non-focus variables (Online Appendix C)</h2>
+<figure><a href="figures/gpvar8_figC4_girf_vs_bvar_nonfocus.png"><img src="figures/gpvar8_figC4_girf_vs_bvar_nonfocus.png" alt="Figure C.4 analogue: GIRFs of AWH, CPI, AHE and FFR, GP-VAR-8 vs. BVAR-8."></a><figcaption>Figure C.4 analogue: GIRFs of AWH, CPI, AHE and FFR, GP-VAR-8 vs. BVAR-8. <span class="dl">(<a href="https://raw.githubusercontent.com/merwanroudane/GP-VAR/main/outputs/figures/gpvar8_figC4_girf_vs_bvar_nonfocus.pdf">PDF</a>)</span></figcaption></figure>
+<figure><a href="figures/gpvar8_figC9_sign_asymmetry_nonfocus.png"><img src="figures/gpvar8_figC9_sign_asymmetry_nonfocus.png" alt="Figure C.9 analogue: sign asymmetries for the non-focus variables."></a><figcaption>Figure C.9 analogue: sign asymmetries for the non-focus variables. <span class="dl">(<a href="https://raw.githubusercontent.com/merwanroudane/GP-VAR/main/outputs/figures/gpvar8_figC9_sign_asymmetry_nonfocus.pdf">PDF</a>)</span></figcaption></figure>
+<figure><a href="figures/gpvar8_figC10_size_asymmetry_nonfocus.png"><img src="figures/gpvar8_figC10_size_asymmetry_nonfocus.png" alt="Figure C.10 analogue: size asymmetries for the non-focus variables."></a><figcaption>Figure C.10 analogue: size asymmetries for the non-focus variables. <span class="dl">(<a href="https://raw.githubusercontent.com/merwanroudane/GP-VAR/main/outputs/figures/gpvar8_figC10_size_asymmetry_nonfocus.pdf">PDF</a>)</span></figcaption></figure>
+<figure><a href="figures/gpvar8_figC5_subsamples_nonfocus.png"><img src="figures/gpvar8_figC5_subsamples_nonfocus.png" alt="Figure C.5 analogue: sub-sample GIRFs of the non-focus variables."></a><figcaption>Figure C.5 analogue: sub-sample GIRFs of the non-focus variables. <span class="dl">(<a href="https://raw.githubusercontent.com/merwanroudane/GP-VAR/main/outputs/figures/gpvar8_figC5_subsamples_nonfocus.pdf">PDF</a>)</span></figcaption></figure>
+<figure><a href="figures/gpvar8_figC7_time_variation_nonfocus.png"><img src="figures/gpvar8_figC7_time_variation_nonfocus.png" alt="Figure C.7 analogue: yearly GIRFs of the non-focus variables."></a><figcaption>Figure C.7 analogue: yearly GIRFs of the non-focus variables. <span class="dl">(<a href="https://raw.githubusercontent.com/merwanroudane/GP-VAR/main/outputs/figures/gpvar8_figC7_time_variation_nonfocus.pdf">PDF</a>)</span></figcaption></figure>
+<h2>Further tables</h2>
+<h3>Data description (Table B.1 analogue).</h3><div class="tablewrap"><table>
+<thead>
+<tr>
+<th>variable</th>
+<th>mnemonic</th>
+<th>transformation</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UNC</td>
+<td>JLN</td>
+<td>1</td>
+<td>Macroeconomic uncertainty index (Jurado, Ludvigson and Ng, 2015), h = 1</td>
+</tr>
+<tr>
+<td>RGDP</td>
+<td>GDPC1</td>
+<td>2</td>
+<td>Real gross domestic product (yoy growth, %)</td>
+</tr>
+<tr>
+<td>EMP</td>
+<td>CE16OV</td>
+<td>2</td>
+<td>Civilian employment (yoy growth, %)</td>
+</tr>
+<tr>
+<td>AWH</td>
+<td>AWHMAN</td>
+<td>1</td>
+<td>Average weekly hours, manufacturing</td>
+</tr>
+<tr>
+<td>CPI</td>
+<td>CPIAUCSL</td>
+<td>2</td>
+<td>Consumer price index, all items (yoy inflation, %)</td>
+</tr>
+<tr>
+<td>AHE</td>
+<td>CES3000000008x</td>
+<td>2</td>
+<td>Real average hourly earnings, manufacturing (yoy growth, %)</td>
+</tr>
+<tr>
+<td>FFR</td>
+<td>FEDFUNDS</td>
+<td>1</td>
+<td>Effective federal funds rate (%)</td>
+</tr>
+<tr>
+<td>SP500</td>
+<td>S&amp;P 500</td>
+<td>3</td>
+<td>S&amp;P 500 composite index (qoq return, %)</td>
+</tr>
+</tbody>
+</table></div>
+<p><em>Notes:</em> Transformations: 1 none, 2 year-on-year growth rate, 3 quarter-on-quarter growth rate. Sources: FRED-QD (McCracken and Ng, 2020) and Jurado, Ludvigson and Ng (2015).</p>
+<h3>Descriptive statistics of the GP-VAR-8 data set.</h3><div class="tablewrap"><table>
+<thead>
+<tr>
+<th>variable</th>
+<th>mean</th>
+<th>std</th>
+<th>min</th>
+<th>max</th>
+<th>skew</th>
+<th>kurt</th>
+<th>AR(1)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UNC</td>
+<td>0.651</td>
+<td>0.095</td>
+<td>0.529</td>
+<td>1.078</td>
+<td>1.646</td>
+<td>3.084</td>
+<td>0.930</td>
+</tr>
+<tr>
+<td>RGDP</td>
+<td>2.724</td>
+<td>2.092</td>
+<td>-4.060</td>
+<td>8.230</td>
+<td>-0.531</td>
+<td>0.999</td>
+<td>0.869</td>
+</tr>
+<tr>
+<td>EMP</td>
+<td>1.409</td>
+<td>1.519</td>
+<td>-4.122</td>
+<td>4.972</td>
+<td>-0.765</td>
+<td>1.834</td>
+<td>0.914</td>
+</tr>
+<tr>
+<td>AWH</td>
+<td>40.806</td>
+<td>0.755</td>
+<td>38.667</td>
+<td>42.233</td>
+<td>-0.296</td>
+<td>-0.380</td>
+<td>0.949</td>
+</tr>
+<tr>
+<td>CPI</td>
+<td>3.883</td>
+<td>2.775</td>
+<td>-1.620</td>
+<td>13.476</td>
+<td>1.421</td>
+<td>1.896</td>
+<td>0.966</td>
+</tr>
+<tr>
+<td>AHE</td>
+<td>0.620</td>
+<td>1.218</td>
+<td>-1.789</td>
+<td>4.840</td>
+<td>0.404</td>
+<td>0.436</td>
+<td>0.910</td>
+</tr>
+<tr>
+<td>FFR</td>
+<td>5.157</td>
+<td>3.898</td>
+<td>0.073</td>
+<td>17.780</td>
+<td>0.745</td>
+<td>0.520</td>
+<td>0.971</td>
+</tr>
+<tr>
+<td>SP500</td>
+<td>1.744</td>
+<td>6.279</td>
+<td>-31.921</td>
+<td>18.330</td>
+<td>-1.292</td>
+<td>4.993</td>
+<td>0.327</td>
+</tr>
+</tbody>
+</table></div>
+<h3>Free elements of the contemporaneous matrix Q (horseshoe prior).</h3><div class="tablewrap"><table>
+<thead>
+<tr>
+<th>element</th>
+<th>mean</th>
+<th>q16</th>
+<th>q50</th>
+<th>q84</th>
+<th>P(&gt;0)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>q[RGDP,UNC]</td>
+<td>-0.193</td>
+<td>-0.252</td>
+<td>-0.197</td>
+<td>-0.130</td>
+<td>0.004</td>
+</tr>
+<tr>
+<td>q[EMP,UNC]</td>
+<td>-0.020</td>
+<td>-0.051</td>
+<td>-0.013</td>
+<td>0.005</td>
+<td>0.278</td>
+</tr>
+<tr>
+<td>q[EMP,RGDP]</td>
+<td>0.387</td>
+<td>0.334</td>
+<td>0.388</td>
+<td>0.436</td>
+<td>1.000</td>
+</tr>
+<tr>
+<td>q[AWH,UNC]</td>
+<td>-0.117</td>
+<td>-0.166</td>
+<td>-0.120</td>
+<td>-0.071</td>
+<td>0.016</td>
+</tr>
+<tr>
+<td>q[AWH,RGDP]</td>
+<td>0.190</td>
+<td>0.140</td>
+<td>0.191</td>
+<td>0.239</td>
+<td>1.000</td>
+</tr>
+<tr>
+<td>q[AWH,EMP]</td>
+<td>0.055</td>
+<td>0.002</td>
+<td>0.046</td>
+<td>0.110</td>
+<td>0.873</td>
+</tr>
+<tr>
+<td>q[CPI,UNC]</td>
+<td>0.061</td>
+<td>0.011</td>
+<td>0.059</td>
+<td>0.109</td>
+<td>0.916</td>
+</tr>
+<tr>
+<td>q[CPI,RGDP]</td>
+<td>0.011</td>
+<td>-0.015</td>
+<td>0.005</td>
+<td>0.043</td>
+<td>0.616</td>
+</tr>
+<tr>
+<td>q[CPI,EMP]</td>
+<td>0.081</td>
+<td>0.022</td>
+<td>0.083</td>
+<td>0.131</td>
+<td>0.945</td>
+</tr>
+<tr>
+<td>q[CPI,AWH]</td>
+<td>-0.020</td>
+<td>-0.055</td>
+<td>-0.011</td>
+<td>0.008</td>
+<td>0.302</td>
+</tr>
+<tr>
+<td>q[AHE,UNC]</td>
+<td>0.032</td>
+<td>-0.003</td>
+<td>0.022</td>
+<td>0.075</td>
+<td>0.769</td>
+</tr>
+<tr>
+<td>q[AHE,RGDP]</td>
+<td>0.007</td>
+<td>-0.022</td>
+<td>0.003</td>
+<td>0.040</td>
+<td>0.571</td>
+</tr>
+<tr>
+<td>q[AHE,EMP]</td>
+<td>0.055</td>
+<td>0.001</td>
+<td>0.047</td>
+<td>0.111</td>
+<td>0.860</td>
+</tr>
+<tr>
+<td>q[AHE,AWH]</td>
+<td>-0.017</td>
+<td>-0.056</td>
+<td>-0.009</td>
+<td>0.015</td>
+<td>0.351</td>
+</tr>
+<tr>
+<td>q[AHE,CPI]</td>
+<td>-0.073</td>
+<td>-0.132</td>
+<td>-0.069</td>
+<td>-0.013</td>
+<td>0.067</td>
+</tr>
+<tr>
+<td>q[FFR,UNC]</td>
+<td>-0.012</td>
+<td>-0.035</td>
+<td>-0.008</td>
+<td>0.008</td>
+<td>0.318</td>
+</tr>
+<tr>
+<td>q[FFR,RGDP]</td>
+<td>0.034</td>
+<td>0.001</td>
+<td>0.032</td>
+<td>0.069</td>
+<td>0.858</td>
+</tr>
+<tr>
+<td>q[FFR,EMP]</td>
+<td>0.085</td>
+<td>0.053</td>
+<td>0.086</td>
+<td>0.118</td>
+<td>0.993</td>
+</tr>
+<tr>
+<td>q[FFR,AWH]</td>
+<td>0.018</td>
+<td>-0.006</td>
+<td>0.012</td>
+<td>0.045</td>
+<td>0.736</td>
+</tr>
+<tr>
+<td>q[FFR,CPI]</td>
+<td>0.047</td>
+<td>0.008</td>
+<td>0.043</td>
+<td>0.083</td>
+<td>0.926</td>
+</tr>
+<tr>
+<td>q[FFR,AHE]</td>
+<td>-0.004</td>
+<td>-0.019</td>
+<td>-0.002</td>
+<td>0.009</td>
+<td>0.414</td>
+</tr>
+<tr>
+<td>q[SP500,UNC]</td>
+<td>-0.100</td>
+<td>-0.220</td>
+<td>-0.073</td>
+<td>0.000</td>
+<td>0.172</td>
+</tr>
+<tr>
+<td>q[SP500,RGDP]</td>
+<td>0.043</td>
+<td>-0.017</td>
+<td>0.014</td>
+<td>0.113</td>
+<td>0.670</td>
+</tr>
+<tr>
+<td>q[SP500,EMP]</td>
+<td>-0.168</td>
+<td>-0.322</td>
+<td>-0.150</td>
+<td>-0.011</td>
+<td>0.100</td>
+</tr>
+<tr>
+<td>q[SP500,AWH]</td>
+<td>0.015</td>
+<td>-0.029</td>
+<td>0.003</td>
+<td>0.066</td>
+<td>0.560</td>
+</tr>
+<tr>
+<td>q[SP500,CPI]</td>
+<td>-0.042</td>
+<td>-0.112</td>
+<td>-0.014</td>
+<td>0.014</td>
+<td>0.323</td>
+</tr>
+<tr>
+<td>q[SP500,AHE]</td>
+<td>-0.047</td>
+<td>-0.116</td>
+<td>-0.026</td>
+<td>0.006</td>
+<td>0.247</td>
+</tr>
+<tr>
+<td>q[SP500,FFR]</td>
+<td>-0.022</td>
+<td>-0.079</td>
+<td>-0.009</td>
+<td>0.029</td>
+<td>0.371</td>
+</tr>
+</tbody>
+</table></div>
+<h3>Average GIRFs to a negative one-standard-deviation shock.</h3><div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>h=0</th>
+<th>h=1</th>
+<th>h=4</th>
+<th>h=8</th>
+<th>h=12</th>
+<th>h=16</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UNC</td>
+<td>-1.000 [-1.000, -1.000]</td>
+<td>-0.782 [-0.814, -0.739]</td>
+<td>-0.380 [-0.452, -0.313]</td>
+<td>-0.128 [-0.219, -0.051]</td>
+<td>0.011 [-0.054, 0.053]</td>
+<td>0.035 [-0.004, 0.065]</td>
+</tr>
+<tr>
+<td>RGDP</td>
+<td>0.195 [0.120, 0.246]</td>
+<td>0.264 [0.188, 0.316]</td>
+<td>0.311 [0.274, 0.355]</td>
+<td>0.250 [0.187, 0.315]</td>
+<td>0.060 [-0.000, 0.142]</td>
+<td>-0.017 [-0.048, 0.042]</td>
+</tr>
+<tr>
+<td>EMP</td>
+<td>0.087 [0.052, 0.146]</td>
+<td>0.181 [0.130, 0.240]</td>
+<td>0.258 [0.208, 0.305]</td>
+<td>0.215 [0.164, 0.289]</td>
+<td>0.090 [0.033, 0.160]</td>
+<td>-0.026 [-0.058, 0.031]</td>
+</tr>
+<tr>
+<td>AWH</td>
+<td>0.156 [0.109, 0.207]</td>
+<td>0.201 [0.159, 0.251]</td>
+<td>0.153 [0.117, 0.189]</td>
+<td>0.135 [0.087, 0.189]</td>
+<td>0.039 [-0.010, 0.087]</td>
+<td>-0.031 [-0.066, -0.002]</td>
+</tr>
+<tr>
+<td>CPI</td>
+<td>-0.049 [-0.094, -0.006]</td>
+<td>-0.062 [-0.115, -0.005]</td>
+<td>-0.043 [-0.078, 0.012]</td>
+<td>-0.010 [-0.053, 0.033]</td>
+<td>0.016 [-0.023, 0.051]</td>
+<td>0.009 [-0.021, 0.038]</td>
+</tr>
+<tr>
+<td>AHE</td>
+<td>-0.021 [-0.053, 0.008]</td>
+<td>-0.028 [-0.078, 0.015]</td>
+<td>0.000 [-0.061, 0.042]</td>
+<td>0.016 [-0.034, 0.056]</td>
+<td>0.025 [-0.016, 0.062]</td>
+<td>0.024 [-0.009, 0.049]</td>
+</tr>
+<tr>
+<td>FFR</td>
+<td>0.024 [0.008, 0.043]</td>
+<td>0.051 [0.027, 0.071]</td>
+<td>0.099 [0.074, 0.126]</td>
+<td>0.144 [0.120, 0.174]</td>
+<td>0.138 [0.103, 0.178]</td>
+<td>0.098 [0.062, 0.144]</td>
+</tr>
+<tr>
+<td>SP500</td>
+<td>0.071 [-0.008, 0.204]</td>
+<td>0.079 [0.023, 0.171]</td>
+<td>0.143 [0.094, 0.195]</td>
+<td>0.055 [0.023, 0.084]</td>
+<td>-0.001 [-0.024, 0.023]</td>
+<td>-0.005 [-0.017, 0.009]</td>
+</tr>
+</tbody>
+</table></div>
+<h3>Peak responses to a positive shock by sub-sample.</h3><div class="tablewrap"><table>
+<thead>
+<tr>
+<th>period</th>
+<th>variable</th>
+<th>impact</th>
+<th>peak</th>
+<th>peak_horizon</th>
+<th>peak_q16</th>
+<th>peak_q84</th>
+<th>cumulative</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1970Q1-1984Q4</td>
+<td>UNC</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>0</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>3.977</td>
+</tr>
+<tr>
+<td>1970Q1-1984Q4</td>
+<td>RGDP</td>
+<td>-0.195</td>
+<td>-0.347</td>
+<td>6</td>
+<td>-0.422</td>
+<td>-0.271</td>
+<td>-2.841</td>
+</tr>
+<tr>
+<td>1970Q1-1984Q4</td>
+<td>EMP</td>
+<td>-0.087</td>
+<td>-0.265</td>
+<td>3</td>
+<td>-0.309</td>
+<td>-0.203</td>
+<td>-2.416</td>
+</tr>
+<tr>
+<td>1970Q1-1984Q4</td>
+<td>AWH</td>
+<td>-0.156</td>
+<td>-0.182</td>
+<td>1</td>
+<td>-0.229</td>
+<td>-0.147</td>
+<td>-1.499</td>
+</tr>
+<tr>
+<td>1970Q1-1984Q4</td>
+<td>CPI</td>
+<td>0.049</td>
+<td>-0.070</td>
+<td>12</td>
+<td>-0.120</td>
+<td>0.006</td>
+<td>-0.253</td>
+</tr>
+<tr>
+<td>1970Q1-1984Q4</td>
+<td>AHE</td>
+<td>0.021</td>
+<td>0.028</td>
+<td>1</td>
+<td>-0.015</td>
+<td>0.076</td>
+<td>0.163</td>
+</tr>
+<tr>
+<td>1970Q1-1984Q4</td>
+<td>FFR</td>
+<td>-0.024</td>
+<td>-0.189</td>
+<td>10</td>
+<td>-0.236</td>
+<td>-0.127</td>
+<td>-2.244</td>
+</tr>
+<tr>
+<td>1970Q1-1984Q4</td>
+<td>SP500</td>
+<td>-0.071</td>
+<td>-0.119</td>
+<td>4</td>
+<td>-0.185</td>
+<td>-0.068</td>
+<td>-0.542</td>
+</tr>
+<tr>
+<td>1985Q1-2006Q4</td>
+<td>UNC</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>0</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>5.936</td>
+</tr>
+<tr>
+<td>1985Q1-2006Q4</td>
+<td>RGDP</td>
+<td>-0.195</td>
+<td>-0.682</td>
+<td>6</td>
+<td>-0.799</td>
+<td>-0.557</td>
+<td>-5.859</td>
+</tr>
+<tr>
+<td>1985Q1-2006Q4</td>
+<td>EMP</td>
+<td>-0.087</td>
+<td>-0.566</td>
+<td>7</td>
+<td>-0.678</td>
+<td>-0.441</td>
+<td>-5.432</td>
+</tr>
+<tr>
+<td>1985Q1-2006Q4</td>
+<td>AWH</td>
+<td>-0.156</td>
+<td>-0.368</td>
+<td>5</td>
+<td>-0.441</td>
+<td>-0.294</td>
+<td>-3.214</td>
+</tr>
+<tr>
+<td>1985Q1-2006Q4</td>
+<td>CPI</td>
+<td>0.049</td>
+<td>-0.077</td>
+<td>10</td>
+<td>-0.139</td>
+<td>-0.001</td>
+<td>-0.268</td>
+</tr>
+<tr>
+<td>1985Q1-2006Q4</td>
+<td>AHE</td>
+<td>0.021</td>
+<td>-0.059</td>
+<td>13</td>
+<td>-0.123</td>
+<td>0.016</td>
+<td>-0.341</td>
+</tr>
+<tr>
+<td>1985Q1-2006Q4</td>
+<td>FFR</td>
+<td>-0.024</td>
+<td>-0.340</td>
+<td>9</td>
+<td>-0.419</td>
+<td>-0.284</td>
+<td>-3.957</td>
+</tr>
+<tr>
+<td>1985Q1-2006Q4</td>
+<td>SP500</td>
+<td>-0.071</td>
+<td>-0.289</td>
+<td>4</td>
+<td>-0.385</td>
+<td>-0.189</td>
+<td>-1.933</td>
+</tr>
+<tr>
+<td>2007Q1-2019Q4</td>
+<td>UNC</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>0</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>5.832</td>
+</tr>
+<tr>
+<td>2007Q1-2019Q4</td>
+<td>RGDP</td>
+<td>-0.195</td>
+<td>-0.523</td>
+<td>5</td>
+<td>-0.626</td>
+<td>-0.440</td>
+<td>-4.604</td>
+</tr>
+<tr>
+<td>2007Q1-2019Q4</td>
+<td>EMP</td>
+<td>-0.087</td>
+<td>-0.458</td>
+<td>6</td>
+<td>-0.561</td>
+<td>-0.365</td>
+<td>-4.502</td>
+</tr>
+<tr>
+<td>2007Q1-2019Q4</td>
+<td>AWH</td>
+<td>-0.156</td>
+<td>-0.258</td>
+<td>5</td>
+<td>-0.354</td>
+<td>-0.185</td>
+<td>-2.230</td>
+</tr>
+<tr>
+<td>2007Q1-2019Q4</td>
+<td>CPI</td>
+<td>0.049</td>
+<td>0.064</td>
+<td>1</td>
+<td>0.004</td>
+<td>0.120</td>
+<td>0.100</td>
+</tr>
+<tr>
+<td>2007Q1-2019Q4</td>
+<td>AHE</td>
+<td>0.021</td>
+<td>-0.062</td>
+<td>14</td>
+<td>-0.133</td>
+<td>0.003</td>
+<td>-0.327</td>
+</tr>
+<tr>
+<td>2007Q1-2019Q4</td>
+<td>FFR</td>
+<td>-0.024</td>
+<td>-0.137</td>
+<td>8</td>
+<td>-0.167</td>
+<td>-0.106</td>
+<td>-1.714</td>
+</tr>
+<tr>
+<td>2007Q1-2019Q4</td>
+<td>SP500</td>
+<td>-0.071</td>
+<td>-0.208</td>
+<td>4</td>
+<td>-0.308</td>
+<td>-0.122</td>
+<td>-1.328</td>
+</tr>
+</tbody>
+</table></div>
+<h3>State dependence: dispersion of history-specific responses.</h3><div class="tablewrap"><table>
+<thead>
+<tr>
+<th>variable</th>
+<th>horizon</th>
+<th>mean</th>
+<th>sd_across_histories</th>
+<th>min</th>
+<th>max</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UNC</td>
+<td>1</td>
+<td>0.869</td>
+<td>0.242</td>
+<td>-0.608</td>
+<td>1.241</td>
+</tr>
+<tr>
+<td>UNC</td>
+<td>4</td>
+<td>0.622</td>
+<td>0.305</td>
+<td>-0.476</td>
+<td>1.200</td>
+</tr>
+<tr>
+<td>UNC</td>
+<td>8</td>
+<td>0.157</td>
+<td>0.161</td>
+<td>-0.268</td>
+<td>0.479</td>
+</tr>
+<tr>
+<td>RGDP</td>
+<td>1</td>
+<td>-0.281</td>
+<td>0.064</td>
+<td>-0.371</td>
+<td>0.104</td>
+</tr>
+<tr>
+<td>RGDP</td>
+<td>4</td>
+<td>-0.467</td>
+<td>0.234</td>
+<td>-0.856</td>
+<td>0.269</td>
+</tr>
+<tr>
+<td>RGDP</td>
+<td>8</td>
+<td>-0.383</td>
+<td>0.283</td>
+<td>-0.918</td>
+<td>0.213</td>
+</tr>
+<tr>
+<td>EMP</td>
+<td>1</td>
+<td>-0.191</td>
+<td>0.040</td>
+<td>-0.250</td>
+<td>0.025</td>
+</tr>
+<tr>
+<td>EMP</td>
+<td>4</td>
+<td>-0.380</td>
+<td>0.169</td>
+<td>-0.684</td>
+<td>0.222</td>
+</tr>
+<tr>
+<td>EMP</td>
+<td>8</td>
+<td>-0.380</td>
+<td>0.242</td>
+<td>-0.874</td>
+<td>0.212</td>
+</tr>
+<tr>
+<td>AWH</td>
+<td>1</td>
+<td>-0.216</td>
+<td>0.052</td>
+<td>-0.315</td>
+<td>0.020</td>
+</tr>
+<tr>
+<td>AWH</td>
+<td>4</td>
+<td>-0.244</td>
+<td>0.139</td>
+<td>-0.568</td>
+<td>0.169</td>
+</tr>
+<tr>
+<td>AWH</td>
+<td>8</td>
+<td>-0.202</td>
+<td>0.156</td>
+<td>-0.558</td>
+<td>0.139</td>
+</tr>
+<tr>
+<td>CPI</td>
+<td>1</td>
+<td>0.063</td>
+<td>0.021</td>
+<td>-0.045</td>
+<td>0.095</td>
+</tr>
+<tr>
+<td>CPI</td>
+<td>4</td>
+<td>0.028</td>
+<td>0.047</td>
+<td>-0.071</td>
+<td>0.144</td>
+</tr>
+<tr>
+<td>CPI</td>
+<td>8</td>
+<td>-0.035</td>
+<td>0.050</td>
+<td>-0.193</td>
+<td>0.114</td>
+</tr>
+<tr>
+<td>AHE</td>
+<td>1</td>
+<td>0.028</td>
+<td>0.008</td>
+<td>-0.003</td>
+<td>0.048</td>
+</tr>
+<tr>
+<td>AHE</td>
+<td>4</td>
+<td>0.008</td>
+<td>0.017</td>
+<td>-0.043</td>
+<td>0.065</td>
+</tr>
+<tr>
+<td>AHE</td>
+<td>8</td>
+<td>-0.017</td>
+<td>0.022</td>
+<td>-0.063</td>
+<td>0.059</td>
+</tr>
+<tr>
+<td>FFR</td>
+<td>1</td>
+<td>-0.054</td>
+<td>0.014</td>
+<td>-0.072</td>
+<td>0.012</td>
+</tr>
+<tr>
+<td>FFR</td>
+<td>4</td>
+<td>-0.131</td>
+<td>0.073</td>
+<td>-0.274</td>
+<td>0.027</td>
+</tr>
+<tr>
+<td>FFR</td>
+<td>8</td>
+<td>-0.214</td>
+<td>0.144</td>
+<td>-0.563</td>
+<td>0.027</td>
+</tr>
+<tr>
+<td>SP500</td>
+<td>1</td>
+<td>-0.105</td>
+<td>0.075</td>
+<td>-0.271</td>
+<td>0.250</td>
+</tr>
+<tr>
+<td>SP500</td>
+<td>4</td>
+<td>-0.208</td>
+<td>0.160</td>
+<td>-0.556</td>
+<td>0.299</td>
+</tr>
+<tr>
+<td>SP500</td>
+<td>8</td>
+<td>-0.069</td>
+<td>0.083</td>
+<td>-0.298</td>
+<td>0.117</td>
+</tr>
+</tbody>
+</table></div>
+<h3>Predictive quantiles from the end of the sample (original units).</h3><div class="tablewrap"><table>
+<thead>
+<tr>
+<th>variable</th>
+<th>horizon</th>
+<th>q05</th>
+<th>q16</th>
+<th>q50</th>
+<th>q84</th>
+<th>q95</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UNC</td>
+<td>1</td>
+<td>0.681</td>
+<td>0.702</td>
+<td>0.737</td>
+<td>0.776</td>
+<td>0.805</td>
+</tr>
+<tr>
+<td>UNC</td>
+<td>4</td>
+<td>0.636</td>
+<td>0.670</td>
+<td>0.744</td>
+<td>0.847</td>
+<td>0.940</td>
+</tr>
+<tr>
+<td>UNC</td>
+<td>8</td>
+<td>0.559</td>
+<td>0.602</td>
+<td>0.666</td>
+<td>0.771</td>
+<td>0.860</td>
+</tr>
+<tr>
+<td>RGDP</td>
+<td>1</td>
+<td>1.356</td>
+<td>1.863</td>
+<td>2.583</td>
+<td>3.326</td>
+<td>3.872</td>
+</tr>
+<tr>
+<td>RGDP</td>
+<td>4</td>
+<td>-2.267</td>
+<td>-0.981</td>
+<td>0.617</td>
+<td>1.956</td>
+<td>2.644</td>
+</tr>
+<tr>
+<td>RGDP</td>
+<td>8</td>
+<td>-2.149</td>
+<td>-0.874</td>
+<td>0.912</td>
+<td>2.460</td>
+<td>3.407</td>
+</tr>
+<tr>
+<td>EMP</td>
+<td>1</td>
+<td>0.380</td>
+<td>0.662</td>
+<td>1.110</td>
+<td>1.533</td>
+<td>1.829</td>
+</tr>
+<tr>
+<td>EMP</td>
+<td>4</td>
+<td>-1.391</td>
+<td>-0.671</td>
+<td>0.321</td>
+<td>1.195</td>
+<td>1.782</td>
+</tr>
+<tr>
+<td>EMP</td>
+<td>8</td>
+<td>-2.437</td>
+<td>-1.561</td>
+<td>-0.142</td>
+<td>1.028</td>
+<td>1.709</td>
+</tr>
+<tr>
+<td>AWH</td>
+<td>1</td>
+<td>40.975</td>
+<td>41.106</td>
+<td>41.301</td>
+<td>41.517</td>
+<td>41.675</td>
+</tr>
+<tr>
+<td>AWH</td>
+<td>4</td>
+<td>40.394</td>
+<td>40.645</td>
+<td>41.074</td>
+<td>41.485</td>
+<td>41.782</td>
+</tr>
+<tr>
+<td>AWH</td>
+<td>8</td>
+<td>40.184</td>
+<td>40.520</td>
+<td>41.013</td>
+<td>41.589</td>
+<td>41.948</td>
+</tr>
+<tr>
+<td>CPI</td>
+<td>1</td>
+<td>1.344</td>
+<td>1.824</td>
+<td>2.417</td>
+<td>3.045</td>
+<td>3.379</td>
+</tr>
+<tr>
+<td>CPI</td>
+<td>4</td>
+<td>0.270</td>
+<td>1.151</td>
+<td>2.432</td>
+<td>3.318</td>
+<td>3.844</td>
+</tr>
+<tr>
+<td>CPI</td>
+<td>8</td>
+<td>-0.376</td>
+<td>0.591</td>
+<td>1.900</td>
+<td>2.954</td>
+<td>3.636</td>
+</tr>
+<tr>
+<td>AHE</td>
+<td>1</td>
+<td>0.577</td>
+<td>0.828</td>
+<td>1.194</td>
+<td>1.628</td>
+<td>1.937</td>
+</tr>
+<tr>
+<td>AHE</td>
+<td>4</td>
+<td>-0.155</td>
+<td>0.379</td>
+<td>1.105</td>
+<td>1.891</td>
+<td>2.615</td>
+</tr>
+<tr>
+<td>AHE</td>
+<td>8</td>
+<td>-0.477</td>
+<td>0.177</td>
+<td>1.015</td>
+<td>2.000</td>
+<td>2.773</td>
+</tr>
+<tr>
+<td>FFR</td>
+<td>1</td>
+<td>0.025</td>
+<td>0.669</td>
+<td>1.521</td>
+<td>2.274</td>
+<td>2.721</td>
+</tr>
+<tr>
+<td>FFR</td>
+<td>4</td>
+<td>-2.272</td>
+<td>-1.193</td>
+<td>0.495</td>
+<td>2.103</td>
+<td>3.002</td>
+</tr>
+<tr>
+<td>FFR</td>
+<td>8</td>
+<td>-2.361</td>
+<td>-1.232</td>
+<td>0.335</td>
+<td>1.962</td>
+<td>3.196</td>
+</tr>
+<tr>
+<td>SP500</td>
+<td>1</td>
+<td>-6.899</td>
+<td>-3.224</td>
+<td>0.953</td>
+<td>5.032</td>
+<td>8.141</td>
+</tr>
+<tr>
+<td>SP500</td>
+<td>4</td>
+<td>-12.257</td>
+<td>-7.094</td>
+<td>-1.123</td>
+<td>3.596</td>
+<td>6.925</td>
+</tr>
+<tr>
+<td>SP500</td>
+<td>8</td>
+<td>-9.153</td>
+<td>-4.111</td>
+<td>1.630</td>
+<td>6.691</td>
+<td>11.575</td>
+</tr>
+</tbody>
+</table></div>
+<h3>Average CRPS in the recursive evaluation (lower is better).</h3><div class="tablewrap"><table>
+<thead>
+<tr>
+<th>horizon</th>
+<th>variable</th>
+<th>BVAR-8</th>
+<th>GP-VAR-8 SV</th>
+<th>GP-VAR-8 homoskedastic</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>CPI</td>
+<td>0.541</td>
+<td>0.672</td>
+<td>0.731</td>
+</tr>
+<tr>
+<td>1</td>
+<td>FFR</td>
+<td>0.648</td>
+<td>0.691</td>
+<td>0.770</td>
+</tr>
+<tr>
+<td>1</td>
+<td>RGDP</td>
+<td>0.712</td>
+<td>0.759</td>
+<td>0.758</td>
+</tr>
+<tr>
+<td>4</td>
+<td>CPI</td>
+<td>1.217</td>
+<td>0.927</td>
+<td>1.080</td>
+</tr>
+<tr>
+<td>4</td>
+<td>FFR</td>
+<td>1.603</td>
+<td>1.323</td>
+<td>1.496</td>
+</tr>
+<tr>
+<td>4</td>
+<td>RGDP</td>
+<td>1.589</td>
+<td>1.167</td>
+<td>1.124</td>
+</tr>
+</tbody>
+</table></div>
+<h2>MCMC diagnostics</h2>
+<figure><a href="figures/gpvar8_mcmc_traces.png"><img src="figures/gpvar8_mcmc_traces.png" alt="Traces of the kernel hyperparameters (own lags blue, other lags green) and of the SV persistence per equation."></a><figcaption>Traces of the kernel hyperparameters (own lags blue, other lags green) and of the SV persistence per equation. <span class="dl">(<a href="https://raw.githubusercontent.com/merwanroudane/GP-VAR/main/outputs/figures/gpvar8_mcmc_traces.pdf">PDF</a>)</span></figcaption></figure>
+<h2 id="simulation-study-section-4-of-the-paper">Simulation study (Section 4 of the paper)</h2>
+<p><code>examples/02_simulation_study.py</code> simulates the paper's three-equation DGP (linear equation with <span class="arithmatex">\(t_3\)</span> shocks, structural break at <span class="arithmatex">\(t=100\)</span>, sine/quadratic non-linearities, random-walk SV, T = 200) and fits the GP-VAR. Posterior of <span class="arithmatex">\(f_j\)</span>, <span class="arithmatex">\(g_j\)</span>, <span class="arithmatex">\(m_j = f_j+g_j\)</span> and <span class="arithmatex">\(y_j\)</span> (red, 90 % bands) against the truth (black) — the analogue of the paper's Figure 3:</p>
+<p><img alt="fig3" src="figures/fig03_simulation_fit.png" /></p>
+<p>Correlation between the posterior median of <span class="arithmatex">\(m_j\)</span> and the true conditional mean over Monte Carlo replications of the DGP (the analogue of Table 1 of the paper, where the authors report 0.945, 0.929 and 0.754 over 100 replications):</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>m1</th>
+<th>m2</th>
+<th>m3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Avg.</td>
+<td>0.987</td>
+<td>0.965</td>
+<td>0.925</td>
+</tr>
+<tr>
+<td>SD</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p><em>Notes:</em> Results from 1 realisations of the Section 4 DGP with T = 200. Avg. is the average correlation, SD the standard deviation across realisations.</p>
+<hr />
+<figure><a href="figures/fig03b_simulation_volatility.png"><img src="figures/fig03b_simulation_volatility.png" alt="Posterior of the structural error standard deviations versus the truth in the simulation."></a><figcaption>Posterior of the structural error standard deviations versus the truth in the simulation. <span class="dl">(<a href="https://raw.githubusercontent.com/merwanroudane/GP-VAR/main/outputs/figures/fig03b_simulation_volatility.pdf">PDF</a>)</span></figcaption></figure>
+<h2 id="gp-regression-illustration-section-2-of-the-paper">GP regression illustration (Section 2 of the paper)</h2>
+<p><code>examples/01_gp_regression_illustration.py</code> reproduces the univariate illustrations with the bundled data: US inflation on a linear trend (Figure 1), GDP growth on lagged macroeconomic uncertainty (Figure 2, below) and the persistence kernel of Appendix A.1. The role of <span class="arithmatex">\(\kappa\)</span> is exactly as described in the paper: <span class="arithmatex">\(\kappa=0.01\)</span> is essentially linear, <span class="arithmatex">\(\kappa=0.1\)</span> reveals the threshold at which high uncertainty starts to depress growth, <span class="arithmatex">\(\kappa=4\)</span> over-fits.</p>
+<p><img alt="fig2" src="figures/fig02_gp_gdp_uncertainty.png" /></p>
+<hr />
+<figure><a href="figures/fig01_gp_inflation_trend.png"><img src="figures/fig01_gp_inflation_trend.png" alt="Figure 1 analogue: inflation on a linear time trend for four kernels."></a><figcaption>Figure 1 analogue: inflation on a linear time trend for four kernels. <span class="dl">(<a href="https://raw.githubusercontent.com/merwanroudane/GP-VAR/main/outputs/figures/fig01_gp_inflation_trend.pdf">PDF</a>)</span></figcaption></figure>
+<figure><a href="figures/figA1_gp_persistence_kernel.png"><img src="figures/figA1_gp_persistence_kernel.png" alt="Figure A.1 analogue: the linear persistence kernel."></a><figcaption>Figure A.1 analogue: the linear persistence kernel. <span class="dl">(<a href="https://raw.githubusercontent.com/merwanroudane/GP-VAR/main/outputs/figures/figA1_gp_persistence_kernel.pdf">PDF</a>)</span></figcaption></figure>
+<h2 id="forecast-evaluation-section-52-of-the-paper">Forecast evaluation (Section 5.2 of the paper)</h2>
+<p><code>examples/04_forecast_evaluation.py</code> runs the recursive (expanding-window) exercise for the GP-VAR-8 with SV, the homoskedastic GP-VAR-8 and a Minnesota BVAR-8, scoring one- and four-quarter-ahead density forecasts of RGDP, CPI and FFR with log predictive likelihoods (jointly and marginally) and CRPS. Log predictive Bayes factors relative to the BVAR (positive = better):</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>variable</th>
+<th>GP-VAR-8 SV (h=1)</th>
+<th>GP-VAR-8 SV (h=4)</th>
+<th>GP-VAR-8 homoskedastic (h=1)</th>
+<th>GP-VAR-8 homoskedastic (h=4)</th>
+<th>BVAR-8 (h=1)</th>
+<th>BVAR-8 (h=4)</th>
+<th>BVAR-8 (LPL) (h=1)</th>
+<th>BVAR-8 (LPL) (h=4)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>joint</td>
+<td>-4.57</td>
+<td>3.92</td>
+<td>-7.55</td>
+<td>3.33</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>-38.18</td>
+<td>-62.66</td>
+</tr>
+<tr>
+<td>RGDP</td>
+<td>-0.73</td>
+<td>2.74</td>
+<td>-0.42</td>
+<td>4.12</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>-14.51</td>
+<td>-24.63</td>
+</tr>
+<tr>
+<td>CPI</td>
+<td>-2.18</td>
+<td>2.67</td>
+<td>-4.26</td>
+<td>-0.01</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>-10.96</td>
+<td>-20.01</td>
+</tr>
+<tr>
+<td>FFR</td>
+<td>-1.22</td>
+<td>1.76</td>
+<td>-2.13</td>
+<td>0.73</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>-12.96</td>
+<td>-23.74</td>
+</tr>
+</tbody>
+</table></div>
+<p><em>Notes:</em> Recursive design, origins 2007Q4 to 2018Q4 every 4 quarters; joint = RGDP, CPI and FFR. The last column block reports the benchmark's log predictive likelihoods.</p>
+<p>Average CRPS by model, horizon and variable is in <code>outputs/tables/table02b_crps.md</code>.</p>
+<p>With 12 annual origins (2007Q4–2018Q4, 400 + 400 MCMC draws per origin), the GP-VAR-8 with SV improves on the linear benchmark at the one-year horizon (joint LPBF +3.9; +2.7 for GDP growth, +2.7 for inflation, +1.8 for the funds rate) while the BVAR is better one quarter ahead, the same horizon pattern the paper reports in Table 2 (gains in predictive accuracy increase with the forecast horizon). The homoskedastic GP-VAR is close to the SV version at h = 4 but clearly worse at h = 1 for inflation and the funds rate, again as in the paper. Cumulative joint LPBFs over the evaluation sample:</p>
+<p><img alt="lpbf" src="figures/forecast_cumulative_lpbf_h4.png" /></p>
+<hr />
+<figure><a href="figures/forecast_cumulative_lpbf_h1.png"><img src="figures/forecast_cumulative_lpbf_h1.png" alt="Cumulative joint LPBF vs. the BVAR-8 at h = 1."></a><figcaption>Cumulative joint LPBF vs. the BVAR-8 at h = 1. <span class="dl">(<a href="https://raw.githubusercontent.com/merwanroudane/GP-VAR/main/outputs/figures/forecast_cumulative_lpbf_h1.pdf">PDF</a>)</span></figcaption></figure>
+</main>
+<footer class="wrap">
+  <p>gpvar · Dr Merwan Roudane · <a href="mailto:merwanroudane920@gmail.com">merwanroudane920@gmail.com</a> · <a href="https://github.com/merwanroudane/GP-VAR">github.com/merwanroudane/GP-VAR</a> · MIT License.<br>
+  Implements Hauzenberger, Huber, Marcellino and Petz (2022), <em>Gaussian Process Vector Autoregressions and Macroeconomic Uncertainty</em>, <a href="https://arxiv.org/abs/2112.01995">arXiv:2112.01995</a>. Data: FRED-QD (Federal Reserve Bank of St. Louis) and Jurado, Ludvigson and Ng (2015).</p>
+</footer>
+</body>
+</html>
