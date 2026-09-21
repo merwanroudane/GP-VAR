@@ -16,12 +16,27 @@ MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$'
 <header class="masthead">
   <div class="wrap">
     <div class="brand"><a href="index.html">gpvar</a><span class="tagline">Gaussian Process Vector Autoregressions with Stochastic Volatility in Python</span></div>
-    <nav><a href="index.html" class=active>Overview</a><a href="concepts.html">Concepts</a><a href="results.html">Results</a><a href="guide.html">User guide</a><a href="methodology.html">Methodology</a><a href="https://github.com/merwanroudane/GP-VAR">GitHub</a><a href="https://pypi.org/project/gpvar/">PyPI</a></nav>
+    <nav><a href="index.html" class=active>Overview</a><a href="concepts.html">Concepts</a><a href="results.html">Results</a><a href="guide.html">User guide</a><a href="methodology.html">Methodology</a><span class="navsep"></span><a href="https://pypi.org/project/gpvar/" class="ext">PyPI</a><a href="https://github.com/merwanroudane/GP-VAR" class="ext">GitHub</a><a href="https://arxiv.org/abs/2112.01995" class="ext">Paper</a></nav>
   </div>
 </header>
+<section class="hero"><div class="wrap">
+  <p class="kicker">Python library · Bayesian non-parametric macroeconometrics</p>
+  <h1>Gaussian Process Vector Autoregressions<br>with Stochastic Volatility</h1>
+  <p class="lead">A faithful, self-contained implementation of the GP-VAR of Hauzenberger, Huber, Marcellino and Petz (2022):
+  conjugate SV-scaled Gaussian-process priors, the median-heuristic hyperparameter grid, the independence-MH volatility sampler,
+  generalized impulse responses with sign, size and time asymmetries, forecasting and density-forecast evaluation — with
+  journal-quality figures and tables reproduced on real US data.</p>
+  <p class="byline">by <strong>Dr Merwan Roudane</strong> · <a href="mailto:merwanroudane920@gmail.com">merwanroudane920@gmail.com</a> · <a href="https://github.com/merwanroudane">github.com/merwanroudane</a></p>
+  <div class="hero-actions">
+    <a class="btn primary" href="https://pypi.org/project/gpvar/">pip install gpvar</a>
+    <a class="btn" href="https://github.com/merwanroudane/GP-VAR">Source on GitHub</a>
+    <a class="btn" href="results.html">See the results</a>
+    <a class="btn" href="https://arxiv.org/abs/2112.01995">Read the paper</a>
+  </div>
+</div></section>
 <main class="wrap">
-<h1 class="pagetitle">Overview</h1>
-<p class="subtitle">A faithful, self-contained Python implementation of the GP-VAR with stochastic volatility of Hauzenberger, Huber, Marcellino and Petz (2022)</p>
+
+
 <p><code>gpvar</code> is a complete, self-contained Python implementation of the <strong>Gaussian process vector autoregression (GP-VAR)</strong> of</p>
 <blockquote>
 <p>Hauzenberger, N., Huber, F., Marcellino, M. and Petz, N. (2022). <em>Gaussian Process Vector Autoregressions and Macroeconomic Uncertainty</em>. arXiv:2112.01995 (Journal of Business &amp; Economic Statistics, forthcoming).</p>
@@ -29,7 +44,40 @@ MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$'
 <p>It follows the paper's methodology step by step (SV-scaled conjugate GP priors on own- and other-lag functionals, discrete hyperparameter grid with the median heuristic, independence-MH log-volatility sampler, horseshoe-shrunk contemporaneous matrix, generalized impulse responses with sign / size / time asymmetries, recursive density-forecast evaluation) and reproduces every type of figure and table of the paper on <strong>real US data</strong> (FRED-QD and the Jurado–Ludvigson–Ng macroeconomic uncertainty index), producing journal-quality output.</p>
 <p>The authors' R replication archive (<code>GPVAR_replication/</code>, Florian Huber, <a href="https://github.com/fhuber7/replication-archive/tree/main/GPVAR_replication">fhuber7/replication-archive</a>) is included for reference; the Python library goes well beyond it (it implements the full algorithm of the paper rather than the simplified kernel version, plus forecasting, evaluation, asymmetry analysis, data pipeline, figures and tables).</p>
 <p><strong>Author:</strong> Dr Merwan Roudane · merwanroudane920@gmail.com · <a href="https://github.com/merwanroudane">github.com/merwanroudane</a></p>
-<p><strong>Documentation site (all concepts, figures and tables):</strong> https://merwanroudane.github.io/GP-VAR/ · <strong>PyPI:</strong> <code>pip install gpvar</code></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>PyPI package</strong></td>
+<td>https://pypi.org/project/gpvar/ — <code>pip install gpvar</code></td>
+</tr>
+<tr>
+<td><strong>Source code</strong></td>
+<td>https://github.com/merwanroudane/GP-VAR</td>
+</tr>
+<tr>
+<td><strong>Documentation site</strong> (concepts, all figures and tables, user guide)</td>
+<td>https://merwanroudane.github.io/GP-VAR/</td>
+</tr>
+<tr>
+<td><strong>Paper</strong></td>
+<td>Hauzenberger, Huber, Marcellino and Petz (2022), https://arxiv.org/abs/2112.01995</td>
+</tr>
+<tr>
+<td><strong>Authors' R replication archive</strong></td>
+<td>https://github.com/fhuber7/replication-archive/tree/main/GPVAR_replication</td>
+</tr>
+<tr>
+<td><strong>License</strong></td>
+<td>MIT</td>
+</tr>
+</tbody>
+</table></div>
 <hr /><div class="grid3"><a class="card" href="concepts.html"><h3>Concepts</h3><p>The model, the SV-scaled Gaussian-process priors, the hyperparameter grid, the sampler and generalized impulse responses, explained with the notation of the paper.</p></a><a class="card" href="results.html"><h3>Results on real data</h3><p>The complete GP-VAR-8 application on US data 1970Q1-2019Q4: every figure and table (shrinkage, kernels, GIRFs, asymmetries, sub-samples, forecasts, evaluation).</p></a><a class="card" href="guide.html"><h3>User guide</h3><p>How to write code with gpvar: data, model specification, estimation, GIRFs, forecasts, figures, tables, with runnable snippets and the full signature reference.</p></a></div><h2 id="1-the-model-in-one-page">1. The model in one page</h2>
 <p>For an <span class="arithmatex">\(M\)</span>-vector of (demeaned, standardised) macroeconomic series <span class="arithmatex">\(y_t\)</span> with <span class="arithmatex">\(p\)</span> lags, the <strong>structural</strong> GP-VAR is</p>
 <div class="arithmatex">\[
@@ -44,6 +92,10 @@ k_{\vartheta}(x_t,x_\tau)=\xi\exp\!\Big(-\tfrac{\kappa}{2}(x_t-x_\tau)'D^{-1}(x_
 <p>and log-volatilities <span class="arithmatex">\(h_{jt}=\log\omega_{jt}\)</span> following a stationary AR(1). The scaling by <span class="arithmatex">\(\sqrt{\Omega_j}\)</span> makes the model conjugate: all kernel inverses can be pre-computed on a discrete <span class="arithmatex">\((\kappa,\xi)\)</span> grid centred on the <strong>median heuristic</strong>, and the sampler's cost per equation does not depend on the number of regressors. Non-linearity of the conditional mean means impulse responses are <strong>generalized</strong> IRFs (Koop, Pesaran and Potter, 1996) that depend on the history, the sign and the size of the shock — the paper's main empirical message about uncertainty shocks.</p>
 <p>Full derivations and the mapping of every sampler step to the code are in <a href="docs/METHODOLOGY.md"><code>docs/METHODOLOGY.md</code></a>.</p>
 <hr /><h2 id="2-installation">2. Installation</h2>
+<p>From PyPI (https://pypi.org/project/gpvar/):</p>
+<pre><code class="language-bash">pip install gpvar
+</code></pre>
+<p>From source (includes the examples, tests and the pre-computed outputs):</p>
 <pre><code class="language-bash">git clone https://github.com/merwanroudane/GP-VAR.git
 cd GP-VAR
 pip install -e .
@@ -279,6 +331,8 @@ fc.quantiles()
 ├── tests/                    pytest suite
 ├── docs/METHODOLOGY.md       equation-by-equation mapping to the paper
 ├── docs/USER_GUIDE.md        syntax guide (same content as Section 4)
+├── docs/CONCEPTS.md          the concepts behind the model, explained
+├── docs/*.html, build_site.py  documentation site (GitHub Pages): https://merwanroudane.github.io/GP-VAR/
 ├── GPVAR_replication/        the authors' original R replication code (unchanged)
 └── 2112.01995v3.pdf is not distributed; download the paper from arXiv
 </code></pre>
@@ -300,10 +354,24 @@ fc.quantiles()
 </code></pre>
 <p>Released under the MIT License. The FRED-QD data are provided by the Federal Reserve Bank of St. Louis; the uncertainty index by Jurado, Ludvigson and Ng (2015) — please cite them when using the data. The R code in <code>GPVAR_replication/</code> is the authors' replication archive and remains their work.</p>
 <p><strong>Dr Merwan Roudane</strong> — merwanroudane920@gmail.com — https://github.com/merwanroudane</p>
+<section class="links"><h2>Links</h2><div class="linkgrid"><a class="linkcard" href="https://pypi.org/project/gpvar/"><span class="lc-title">PyPI package</span><span class="lc-sub">pip install gpvar</span></a><a class="linkcard" href="https://github.com/merwanroudane/GP-VAR"><span class="lc-title">Source code on GitHub</span><span class="lc-sub">merwanroudane/GP-VAR</span></a><a class="linkcard" href="https://arxiv.org/abs/2112.01995"><span class="lc-title">The paper</span><span class="lc-sub">Hauzenberger, Huber, Marcellino and Petz (2022), arXiv:2112.01995</span></a><a class="linkcard" href="https://github.com/fhuber7/replication-archive/tree/main/GPVAR_replication"><span class="lc-title">Authors' R replication archive</span><span class="lc-sub">fhuber7/replication-archive</span></a><a class="linkcard" href="https://github.com/merwanroudane"><span class="lc-title">Author on GitHub</span><span class="lc-sub">github.com/merwanroudane</span></a><a class="linkcard" href="mailto:merwanroudane920@gmail.com"><span class="lc-title">Contact</span><span class="lc-sub">merwanroudane920@gmail.com</span></a></div></section>
+<section class="author">
+  <h2>Author</h2>
+  <p class="author-name">Dr Merwan Roudane</p>
+  <p class="author-links"><a href="mailto:merwanroudane920@gmail.com">merwanroudane920@gmail.com</a> ·
+  <a href="https://github.com/merwanroudane">github.com/merwanroudane</a> ·
+  <a href="https://pypi.org/project/gpvar/">pypi.org/project/gpvar</a></p>
+  <p>gpvar is developed and maintained by Merwan Roudane and released under the MIT License. It implements the model of
+  Hauzenberger, Huber, Marcellino and Petz (2022); the original authors' R replication archive is redistributed unchanged in the repository.</p>
+</section>
 </main>
-<footer class="wrap">
-  <p>gpvar · Dr Merwan Roudane · <a href="mailto:merwanroudane920@gmail.com">merwanroudane920@gmail.com</a> · <a href="https://github.com/merwanroudane/GP-VAR">github.com/merwanroudane/GP-VAR</a> · MIT License.<br>
-  Implements Hauzenberger, Huber, Marcellino and Petz (2022), <em>Gaussian Process Vector Autoregressions and Macroeconomic Uncertainty</em>, <a href="https://arxiv.org/abs/2112.01995">arXiv:2112.01995</a>. Data: FRED-QD (Federal Reserve Bank of St. Louis) and Jurado, Ludvigson and Ng (2015).</p>
+<footer>
+  <div class="wrap">
+  <p><strong>gpvar</strong> — Gaussian Process Vector Autoregressions with Stochastic Volatility in Python · version 1.0.0 · MIT License</p>
+  <p>Dr Merwan Roudane · <a href="mailto:merwanroudane920@gmail.com">merwanroudane920@gmail.com</a> · <a href="https://github.com/merwanroudane">github.com/merwanroudane</a></p>
+  <p><a href="https://pypi.org/project/gpvar/">PyPI</a> · <a href="https://github.com/merwanroudane/GP-VAR">GitHub repository</a> · <a href="https://merwanroudane.github.io/GP-VAR/">Documentation</a> · <a href="https://arxiv.org/abs/2112.01995">Paper (arXiv:2112.01995)</a></p>
+  <p>Implements Hauzenberger, N., Huber, F., Marcellino, M. and Petz, N. (2022), <em>Gaussian Process Vector Autoregressions and Macroeconomic Uncertainty</em>. Data: FRED-QD (Federal Reserve Bank of St. Louis) and the macroeconomic uncertainty index of Jurado, Ludvigson and Ng (2015).</p>
+  </div>
 </footer>
 </body>
 </html>

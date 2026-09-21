@@ -10,7 +10,14 @@ The authors' R replication archive (`GPVAR_replication/`, Florian Huber, [fhuber
 
 **Author:** Dr Merwan Roudane · merwanroudane920@gmail.com · [github.com/merwanroudane](https://github.com/merwanroudane)
 
-**Documentation site (all concepts, figures and tables):** https://merwanroudane.github.io/GP-VAR/ · **PyPI:** `pip install gpvar`
+| | |
+|---|---|
+| **PyPI package** | https://pypi.org/project/gpvar/ — `pip install gpvar` |
+| **Source code** | https://github.com/merwanroudane/GP-VAR |
+| **Documentation site** (concepts, all figures and tables, user guide) | https://merwanroudane.github.io/GP-VAR/ |
+| **Paper** | Hauzenberger, Huber, Marcellino and Petz (2022), https://arxiv.org/abs/2112.01995 |
+| **Authors' R replication archive** | https://github.com/fhuber7/replication-archive/tree/main/GPVAR_replication |
+| **License** | MIT |
 
 ---
 
@@ -56,6 +63,14 @@ Full derivations and the mapping of every sampler step to the code are in [`docs
 ---
 
 ## 2. Installation
+
+From PyPI (https://pypi.org/project/gpvar/):
+
+```bash
+pip install gpvar
+```
+
+From source (includes the examples, tests and the pre-computed outputs):
 
 ```bash
 git clone https://github.com/merwanroudane/GP-VAR.git

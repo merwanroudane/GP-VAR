@@ -28,8 +28,32 @@ MD_EXT = ["tables", "fenced_code", "toc", "attr_list", "md_in_html", "pymdownx.a
 MD_CFG = {"pymdownx.arithmatex": {"generic": True}}
 
 NAV = [("index.html", "Overview"), ("concepts.html", "Concepts"), ("results.html", "Results"),
-       ("guide.html", "User guide"), ("methodology.html", "Methodology"),
-       ("https://github.com/merwanroudane/GP-VAR", "GitHub"), ("https://pypi.org/project/gpvar/", "PyPI")]
+       ("guide.html", "User guide"), ("methodology.html", "Methodology")]
+
+LINKS = [
+    ("https://pypi.org/project/gpvar/", "PyPI package", "pip install gpvar"),
+    ("https://github.com/merwanroudane/GP-VAR", "Source code on GitHub", "merwanroudane/GP-VAR"),
+    ("https://arxiv.org/abs/2112.01995", "The paper", "Hauzenberger, Huber, Marcellino and Petz (2022), arXiv:2112.01995"),
+    ("https://github.com/fhuber7/replication-archive/tree/main/GPVAR_replication", "Authors' R replication archive", "fhuber7/replication-archive"),
+    ("https://github.com/merwanroudane", "Author on GitHub", "github.com/merwanroudane"),
+    ("mailto:merwanroudane920@gmail.com", "Contact", "merwanroudane920@gmail.com"),
+]
+
+AUTHOR_HTML = """<section class="author">
+  <h2>Author</h2>
+  <p class="author-name">Dr Merwan Roudane</p>
+  <p class="author-links"><a href="mailto:merwanroudane920@gmail.com">merwanroudane920@gmail.com</a> ·
+  <a href="https://github.com/merwanroudane">github.com/merwanroudane</a> ·
+  <a href="https://pypi.org/project/gpvar/">pypi.org/project/gpvar</a></p>
+  <p>gpvar is developed and maintained by Merwan Roudane and released under the MIT License. It implements the model of
+  Hauzenberger, Huber, Marcellino and Petz (2022); the original authors' R replication archive is redistributed unchanged in the repository.</p>
+</section>"""
+
+
+def links_html() -> str:
+    items = "".join(f'<a class="linkcard" href="{h}"><span class="lc-title">{t}</span><span class="lc-sub">{d}</span></a>'
+                    for h, t, d in LINKS)
+    return f'<section class="links"><h2>Links</h2><div class="linkgrid">{items}</div></section>'
 
 
 def md(text: str) -> str:
@@ -37,7 +61,7 @@ def md(text: str) -> str:
     return html.replace("<table>", '<div class="tablewrap"><table>').replace("</table>", "</table></div>")
 
 
-def page(title: str, body: str, active: str, subtitle: str = "") -> str:
+def page(title: str, body: str, active: str, subtitle: str = "", hero: str = "") -> str:
     nav = "".join(
         f'<a href="{href}"{" class=active" if href == active else ""}>{label}</a>' for href, label in NAV)
     return f"""<!DOCTYPE html>
@@ -58,17 +82,24 @@ MathJax = {{ tex: {{ inlineMath: [['$', '$'], ['\\\\(', '\\\\)']], displayMath: 
 <header class="masthead">
   <div class="wrap">
     <div class="brand"><a href="index.html">gpvar</a><span class="tagline">Gaussian Process Vector Autoregressions with Stochastic Volatility in Python</span></div>
-    <nav>{nav}</nav>
+    <nav>{nav}<span class="navsep"></span><a href="https://pypi.org/project/gpvar/" class="ext">PyPI</a><a href="https://github.com/merwanroudane/GP-VAR" class="ext">GitHub</a><a href="https://arxiv.org/abs/2112.01995" class="ext">Paper</a></nav>
   </div>
 </header>
+{hero}
 <main class="wrap">
-<h1 class="pagetitle">{title}</h1>
-{f'<p class="subtitle">{subtitle}</p>' if subtitle else ''}
+{'' if hero else f'<h1 class="pagetitle">{title}</h1>'}
+{f'<p class="subtitle">{subtitle}</p>' if subtitle and not hero else ''}
 {body}
+{links_html()}
+{AUTHOR_HTML}
 </main>
-<footer class="wrap">
-  <p>gpvar · Dr Merwan Roudane · <a href="mailto:merwanroudane920@gmail.com">merwanroudane920@gmail.com</a> · <a href="https://github.com/merwanroudane/GP-VAR">github.com/merwanroudane/GP-VAR</a> · MIT License.<br>
-  Implements Hauzenberger, Huber, Marcellino and Petz (2022), <em>Gaussian Process Vector Autoregressions and Macroeconomic Uncertainty</em>, <a href="https://arxiv.org/abs/2112.01995">arXiv:2112.01995</a>. Data: FRED-QD (Federal Reserve Bank of St. Louis) and Jurado, Ludvigson and Ng (2015).</p>
+<footer>
+  <div class="wrap">
+  <p><strong>gpvar</strong> — Gaussian Process Vector Autoregressions with Stochastic Volatility in Python · version 1.0.0 · MIT License</p>
+  <p>Dr Merwan Roudane · <a href="mailto:merwanroudane920@gmail.com">merwanroudane920@gmail.com</a> · <a href="https://github.com/merwanroudane">github.com/merwanroudane</a></p>
+  <p><a href="https://pypi.org/project/gpvar/">PyPI</a> · <a href="https://github.com/merwanroudane/GP-VAR">GitHub repository</a> · <a href="https://merwanroudane.github.io/GP-VAR/">Documentation</a> · <a href="https://arxiv.org/abs/2112.01995">Paper (arXiv:2112.01995)</a></p>
+  <p>Implements Hauzenberger, N., Huber, F., Marcellino, M. and Petz, N. (2022), <em>Gaussian Process Vector Autoregressions and Macroeconomic Uncertainty</em>. Data: FRED-QD (Federal Reserve Bank of St. Louis) and the macroeconomic uncertainty index of Jurado, Ludvigson and Ng (2015).</p>
+  </div>
 </footer>
 </body>
 </html>
@@ -117,8 +148,23 @@ def build():
     overview += figure("gpvar8_fig07_girf_vs_bvar_focus", "Average GIRFs of the focus variables, GP-VAR-8 (orange) vs. BVAR-8 (grey).")
     overview += figure("gpvar8_fig09_sign_asymmetry_focus", "Responses to positive (orange) and negative (blue) shocks; the mirrored negative response (grey) would coincide with the orange line in a linear model.")
     overview += md(section(9)) + md(section(10)) + md(section(11)) + md(section(12)) + md(section(13)) + md(section(14))
+    hero = """<section class="hero"><div class="wrap">
+  <p class="kicker">Python library · Bayesian non-parametric macroeconometrics</p>
+  <h1>Gaussian Process Vector Autoregressions<br>with Stochastic Volatility</h1>
+  <p class="lead">A faithful, self-contained implementation of the GP-VAR of Hauzenberger, Huber, Marcellino and Petz (2022):
+  conjugate SV-scaled Gaussian-process priors, the median-heuristic hyperparameter grid, the independence-MH volatility sampler,
+  generalized impulse responses with sign, size and time asymmetries, forecasting and density-forecast evaluation — with
+  journal-quality figures and tables reproduced on real US data.</p>
+  <p class="byline">by <strong>Dr Merwan Roudane</strong> · <a href="mailto:merwanroudane920@gmail.com">merwanroudane920@gmail.com</a> · <a href="https://github.com/merwanroudane">github.com/merwanroudane</a></p>
+  <div class="hero-actions">
+    <a class="btn primary" href="https://pypi.org/project/gpvar/">pip install gpvar</a>
+    <a class="btn" href="https://github.com/merwanroudane/GP-VAR">Source on GitHub</a>
+    <a class="btn" href="results.html">See the results</a>
+    <a class="btn" href="https://arxiv.org/abs/2112.01995">Read the paper</a>
+  </div>
+</div></section>"""
     open(os.path.join(DOCS, "index.html"), "w", encoding="utf-8").write(
-        page("Overview", overview, "index.html", "A faithful, self-contained Python implementation of the GP-VAR with stochastic volatility of Hauzenberger, Huber, Marcellino and Petz (2022)"))
+        page("Overview", overview, "index.html", "", hero=hero))
 
     # ---------------- concepts
     concepts = open(os.path.join(DOCS, "CONCEPTS.md"), encoding="utf-8").read()

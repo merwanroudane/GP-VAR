@@ -86,3 +86,40 @@ mjx-container[display="true"] { overflow-x: auto; overflow-y: hidden; margin: 12
   h1.pagetitle { font-size: 26px; }
   .masthead .wrap { flex-direction: column; align-items: flex-start; }
 }
+
+/* header extras */
+nav .navsep { display: inline-block; width: 1px; height: 16px; background: var(--rule); align-self: center; }
+nav a.ext { color: var(--muted); }
+
+/* hero */
+.hero { background: linear-gradient(180deg, #f4f7fa 0%, #ffffff 100%); border-bottom: 1px solid var(--rule); padding: 48px 0 40px; }
+.hero .kicker { font-family: "Source Sans 3", sans-serif; text-transform: uppercase; letter-spacing: 0.12em; font-size: 12.5px; color: var(--muted); margin: 0 0 10px; }
+.hero h1 { font-size: 40px; font-weight: 600; line-height: 1.15; margin: 0 0 16px; color: var(--accent); }
+.hero .lead { font-size: 18px; max-width: 60em; color: var(--ink); margin-bottom: 14px; }
+.hero .byline { font-family: "Source Sans 3", sans-serif; font-size: 16px; color: var(--muted); margin-bottom: 22px; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn { font-family: "Source Sans 3", sans-serif; font-weight: 600; font-size: 15px; text-decoration: none; padding: 9px 16px; border: 1px solid var(--accent); border-radius: 5px; color: var(--accent); background: #fff; transition: background .15s, color .15s; }
+.btn:hover { background: var(--accent-soft); }
+.btn.primary { background: var(--accent); color: #fff; font-family: "Source Code Pro", monospace; font-weight: 500; }
+.btn.primary:hover { background: #163a5a; }
+
+/* links section */
+.linkgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 14px 0 6px; }
+.linkcard { display: flex; flex-direction: column; text-decoration: none; border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; background: #fff; transition: border-color .15s; }
+.linkcard:hover { border-color: var(--accent); }
+.lc-title { font-family: "Source Sans 3", sans-serif; font-weight: 600; color: var(--accent); }
+.lc-sub { font-family: "Source Sans 3", sans-serif; font-size: 14px; color: var(--muted); margin-top: 2px; word-break: break-word; }
+
+/* author */
+.author { margin-top: 10px; }
+.author-name { font-size: 22px; font-weight: 600; margin: 4px 0 2px; }
+.author-links { font-family: "Source Sans 3", sans-serif; color: var(--muted); margin-bottom: 10px; }
+
+/* footer refinements */
+footer { padding: 26px 0 44px; }
+footer p { margin: 0 0 4px; }
+
+@media (max-width: 640px) {
+  .hero h1 { font-size: 28px; }
+  .hero { padding: 32px 0 28px; }
+}
